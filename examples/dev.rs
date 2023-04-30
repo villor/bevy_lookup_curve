@@ -31,6 +31,7 @@ struct LookupCurveEditorResource {
   editor: LookupCurveEditor,
   sample: f32,
   sample_dir: f32,
+  move_sample: bool,
 }
 
 fn setup(
@@ -38,9 +39,9 @@ fn setup(
   mut lookup_curves: ResMut<Assets<LookupCurve>>,
 ) {
   let handle = lookup_curves.add(LookupCurve::new(vec![
-    Key { id: 0, position: Vec2::ZERO, interpolation: KeyInterpolation::Constant },
-    Key { id: 1, position: Vec2::new(0.2, 0.4), interpolation: KeyInterpolation::Linear },
-    Key { id: 2, position: Vec2::ONE, interpolation: KeyInterpolation::Linear }
+    Key { id: 0, position: Vec2::ZERO, interpolation: KeyInterpolation::Constant, ..default() },
+    Key { id: 1, position: Vec2::new(0.2, 0.4), interpolation: KeyInterpolation::Linear, ..default() },
+    Key { id: 2, position: Vec2::ONE, interpolation: KeyInterpolation::Linear, ..default() }
   ]));
 
   commands.insert_resource(LookupCurveEditorResource {
@@ -48,6 +49,7 @@ fn setup(
     editor: LookupCurveEditor::default(),
     sample: 0.0,
     sample_dir: 1.0,
+    move_sample: true,
   });
 }
 
@@ -58,13 +60,14 @@ fn editor_window(
   time: Res<Time>,
 ) {
   
-  if editor.sample >= 1.0 {
-    editor.sample_dir = -1.0;
-  } else if editor.sample <= 0.0 {
-    editor.sample_dir = 1.0;
+  if editor.move_sample {
+    if editor.sample >= 1.0 {
+      editor.sample_dir = -1.0;
+    } else if editor.sample <= 0.0 {
+      editor.sample_dir = 1.0;
+    }
+    editor.sample += time.delta_seconds() * 0.3 * editor.sample_dir;
   }
-  editor.sample += time.delta_seconds() * 0.3 * editor.sample_dir;
-  
 
   if let Some(curve) = curves.get_mut(&editor.curve_handle) {
     egui::Window::new("Lookup curve")

@@ -81,6 +81,7 @@ impl LookupCurveEditor {
 
       self.paint_grid(&painter, &to_screen);
 
+      // Draw the curve
       for curve in curves {
         let curve_stroke = Stroke {
           color: Color32::GREEN,
@@ -140,8 +141,51 @@ impl LookupCurveEditor {
             3.0,
             Color32::LIGHT_GREEN
           ));
+
+          // right tangent
+          {
+            let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(key.position + key.right_tangent));
+            let interact_rect = Rect::from_center_size(point_in_screen, emath::Vec2::splat(2.0 * key_radius));
+            let interact_id = interact_id.with(0);
+            let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
+
+            if interact_response.dragged() {
+              modified_key = Some((i, Key {
+                right_tangent: key.right_tangent + self.canvas_to_curve_vec(interact_response.drag_delta()),
+                ..*key
+              }));
+            }
+
+            painter.add(Shape::circle_filled(
+              point_in_screen,
+              3.0,
+              Color32::LIGHT_GRAY
+            ));
+          }
+
+          // left tangent
+          {
+            let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(key.position + key.left_tangent));
+            let interact_rect = Rect::from_center_size(point_in_screen, emath::Vec2::splat(2.0 * key_radius));
+            let interact_id = interact_id.with(1);
+            let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
+
+            if interact_response.dragged() {
+              modified_key = Some((i, Key {
+                left_tangent: key.left_tangent + self.canvas_to_curve_vec(interact_response.drag_delta()),
+                ..*key
+              }));
+            }
+
+            painter.add(Shape::circle_filled(
+              point_in_screen,
+              3.0,
+              Color32::LIGHT_GRAY
+            ));
+          }
         }
 
+        // Apply modifications
         if let Some((i, key)) = modified_key {
           curve.modify_key(i, &key);
         }

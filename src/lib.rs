@@ -17,8 +17,20 @@ pub struct Key {
   pub interpolation: KeyInterpolation,
 
   pub id: usize,
-  //left_tangent: Vec2,
-  //right_tangent: Vec2,
+  pub left_tangent: Vec2,
+  pub right_tangent: Vec2,
+}
+
+impl Default for Key {
+  fn default() -> Self {
+    Self {
+      position: Vec2::ZERO,
+      interpolation: KeyInterpolation::Linear,
+      id: 0,
+      right_tangent: Vec2::new(0.1, 0.0),
+      left_tangent: Vec2::new(-0.1, 0.0),
+    }
+  }
 }
 
 /// Two-dimensional spline that only allows a single y-value per x-value
