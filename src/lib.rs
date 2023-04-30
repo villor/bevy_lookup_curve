@@ -15,6 +15,8 @@ pub struct Key {
   pub position: Vec2,
   /// Interpolation used between this and the next key
   pub interpolation: KeyInterpolation,
+
+  pub id: usize,
   //left_tangent: Vec2,
   //right_tangent: Vec2,
 }
@@ -23,7 +25,7 @@ pub struct Key {
 #[derive(Debug, TypeUuid, Reflect, FromReflect)]
 #[uuid = "3219b5f0-fff6-42fd-9fc8-fd98ff8dae35"]
 pub struct LookupCurve {
-  pub keys: Vec<Key>,
+  keys: Vec<Key>,
 
   //#[reflect(ignore)]
   //bezier: Bezier<Vec2>,
@@ -32,8 +34,16 @@ pub struct LookupCurve {
 }
 
 impl LookupCurve {
-  pub fn new(keys: Vec<Key>) -> Self {
-    Self { keys }
+  pub fn new(mut keys: Vec<Key>) -> Self {
+    keys.sort_by(|a, b|
+      a.position.x
+        .partial_cmp(&b.position.x)
+        .expect("NaN is not allowed")
+    );
+    
+    Self {
+      keys,
+    }
   }
 
   // fn linear(start: Vec2, end: Vec2) {
@@ -44,6 +54,47 @@ impl LookupCurve {
   //     ]
   //   }
   // }
+
+  pub fn keys(&self) -> &[Key] {
+    self.keys.as_slice()
+  }
+
+  /// Modifies an existing key in the lookup curve. Returns the new (possibly unchanged) index of the key.
+  fn modify_key(&mut self, i: usize, new_value: &Key) -> usize {
+    let old_value = self.keys[i];
+    if old_value.position == new_value.position {
+      // The key has not been moved, simply overwrite it
+      self.keys[i] = *new_value;
+      return i;
+    }
+
+    // binary seach for new idx
+    let new_i = self.find_key_index_given_x(new_value.position.x);
+    if new_i == i {
+      // Key stays in the same spot even though position was changed, overwrite it
+      self.keys[i] = *new_value;
+      return i;
+    }
+
+    self.keys.remove(i);
+
+    let insert_i = if i < new_i { new_i - 1 } else { new_i };
+    self.keys.insert(insert_i, *new_value);
+
+    insert_i
+  }
+
+  fn find_key_index_given_x(&self, x: f32) -> usize {
+    let result = self.keys.binary_search_by(|key|
+      key.position.x.partial_cmp(&x).expect("NaN is not allowed")
+    );
+    match result {
+      Ok(i) => i,
+      Err(i) => i,
+    }
+  }
+
+  //pub fn move_key(&mut self, )
 
   /// Find y given x
   pub fn find_y_given_x(&self, x: f32) -> f32 {

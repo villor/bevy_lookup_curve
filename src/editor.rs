@@ -15,6 +15,8 @@ pub struct LookupCurveEditor {
 
   pub editor_size: Vec2,
   pub hover_point: Vec2,
+
+
 }
 
 impl Default for LookupCurveEditor {
@@ -89,7 +91,7 @@ impl LookupCurveEditor {
 
         // TODO: Only keys inside viewport
         let mut prev_key: Option<&Key> = None;
-        for key in curve.keys.iter() {
+        for key in curve.keys().iter() {
           if let Some(prev_key) = prev_key {
             match prev_key.interpolation {
               KeyInterpolation::Constant => {
@@ -121,15 +123,18 @@ impl LookupCurveEditor {
 
         // Handles
         let key_radius = 8.0;
-        for (i, key) in curve.keys.iter_mut().enumerate() {
+        let mut modified_key = None;
+        for (i, key) in curve.keys().iter().enumerate() {
           let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(key.position));
           let interact_rect = Rect::from_center_size(point_in_screen, emath::Vec2::splat(2.0 * key_radius));
-          let interact_id = response.id.with(i);
+          let interact_id = response.id.with(key.id);
           let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
-
+          
           if interact_response.dragged() {
-            // TODO: fix ordering
-            key.position += self.canvas_to_curve_vec(interact_response.drag_delta());
+            modified_key = Some((i, Key {
+              position: key.position + self.canvas_to_curve_vec(interact_response.drag_delta()),
+              ..*key
+            }));
           }
 
           painter.add(Shape::circle_filled(
@@ -137,6 +142,10 @@ impl LookupCurveEditor {
             3.0,
             Color32::LIGHT_GREEN
           ));
+        }
+
+        if let Some((i, key)) = modified_key {
+          curve.modify_key(i, &key);
         }
       }
 

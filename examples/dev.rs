@@ -35,13 +35,11 @@ fn setup(
   mut commands: Commands,
   mut lookup_curves: ResMut<Assets<LookupCurve>>,
 ) {
-  let handle = lookup_curves.add(LookupCurve {
-    keys: vec![
-      Key { position: Vec2::ZERO, interpolation: KeyInterpolation::Constant },
-      Key { position: Vec2::new(0.2, 0.4), interpolation: KeyInterpolation::Linear },
-      Key { position: Vec2::ONE, interpolation: KeyInterpolation::Linear }
-    ]
-  });
+  let handle = lookup_curves.add(LookupCurve::new(vec![
+    Key { id: 0, position: Vec2::ZERO, interpolation: KeyInterpolation::Constant },
+    Key { id: 1, position: Vec2::new(0.2, 0.4), interpolation: KeyInterpolation::Linear },
+    Key { id: 2, position: Vec2::ONE, interpolation: KeyInterpolation::Linear }
+  ]));
 
   commands.insert_resource(LookupCurveEditorResource {
     curve_handle: handle,
