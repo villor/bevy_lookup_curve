@@ -15,8 +15,6 @@ pub struct LookupCurveEditor {
 
   pub editor_size: Vec2,
   pub hover_point: Vec2,
-
-
 }
 
 impl Default for LookupCurveEditor {
@@ -55,7 +53,7 @@ impl LookupCurveEditor {
     canvas / self.editor_size * self.scale
   }
 
-  pub fn ui<'a>(&mut self, ui: &mut Ui, curves: impl Iterator<Item = &'a mut LookupCurve>) {
+  pub fn ui<'a>(&mut self, ui: &mut Ui, curves: impl Iterator<Item = &'a mut LookupCurve>, sample: Option<f32>) {
     ui.label(format!("x = {}, y = {}", self.hover_point.x, self.hover_point.y));
 
     Frame::canvas(ui.style()).show(ui, |ui| {
@@ -129,7 +127,7 @@ impl LookupCurveEditor {
           let interact_rect = Rect::from_center_size(point_in_screen, emath::Vec2::splat(2.0 * key_radius));
           let interact_id = response.id.with(key.id);
           let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
-          
+
           if interact_response.dragged() {
             modified_key = Some((i, Key {
               position: key.position + self.canvas_to_curve_vec(interact_response.drag_delta()),
@@ -146,6 +144,15 @@ impl LookupCurveEditor {
 
         if let Some((i, key)) = modified_key {
           curve.modify_key(i, &key);
+        }
+
+        // Sample to visualize and test find_y_given_x
+        if let Some(sample) = sample {
+          painter.add(Shape::circle_filled(
+            to_screen.transform_pos(self.curve_to_canvas(Vec2::new(sample, curve.find_y_given_x(sample)))),
+            3.0,
+            Color32::RED
+          ));
         }
       }
 

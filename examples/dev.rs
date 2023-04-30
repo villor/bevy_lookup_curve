@@ -29,6 +29,8 @@ fn main() {
 struct LookupCurveEditorResource {
   curve_handle: Handle<LookupCurve>,
   editor: LookupCurveEditor,
+  sample: f32,
+  sample_dir: f32,
 }
 
 fn setup(
@@ -43,19 +45,32 @@ fn setup(
 
   commands.insert_resource(LookupCurveEditorResource {
     curve_handle: handle,
-    editor: LookupCurveEditor::default()
+    editor: LookupCurveEditor::default(),
+    sample: 0.0,
+    sample_dir: 1.0,
   });
 }
 
 fn editor_window(
   mut editor: ResMut<LookupCurveEditorResource>,
   mut contexts: EguiContexts,
-  mut curves: ResMut<Assets<LookupCurve>>
+  mut curves: ResMut<Assets<LookupCurve>>,
+  time: Res<Time>,
 ) {
+  
+  if editor.sample >= 1.0 {
+    editor.sample_dir = -1.0;
+  } else if editor.sample <= 0.0 {
+    editor.sample_dir = 1.0;
+  }
+  editor.sample += time.delta_seconds() * 0.3 * editor.sample_dir;
+  
+
   if let Some(curve) = curves.get_mut(&editor.curve_handle) {
     egui::Window::new("Lookup curve")
       .show(contexts.ctx_mut(), |ui| {
-        editor.editor.ui(ui, std::iter::once(curve));
+        let sample = editor.sample;
+        editor.editor.ui(ui, std::iter::once(curve), Some(sample));
       });
   }
 }
