@@ -1,0 +1,22 @@
+[package]
+name = "bevy_lookup_curve"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# core
+bevy_math = "0.10"
+bevy_reflect = "0.10"
+bevy_asset = "0.10"
+bevy_log = "0.10"
+
+# egui editor
+egui = "0.21"
+
+# egui inspector
+# bevy_app = "0.10"
+# bevy-inspector-egui = { version = "0.18", default-features = false }
+
+[dev-dependencies]
+bevy = { version = "0.10", default-features = false, features = ["x11", "bevy_winit", "bevy_sprite", "bevy_core_pipeline", "bevy_render", "bevy_asset", "png"] }
+bevy_egui = "0.20"
