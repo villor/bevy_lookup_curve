@@ -32,7 +32,7 @@ pub struct LookupCurve {
 }
 
 impl LookupCurve {
-  fn new(keys: Vec<Key>) -> Self {
+  pub fn new(keys: Vec<Key>) -> Self {
     Self { keys }
   }
 
@@ -46,7 +46,7 @@ impl LookupCurve {
   // }
 
   /// Find y given x
-  fn find_y_given_x(&self, x: f32) -> f32 {
+  pub fn find_y_given_x(&self, x: f32) -> f32 {
     // Return repeated constant values outside of key range
     if self.keys.is_empty() {
       return 0.0;

@@ -1,6 +1,6 @@
 use bevy_reflect::{Reflect, FromReflect};
 use bevy_math::Vec2;
-use egui::{Pos2, Ui, emath, Frame, Shape, Color32, Rect, Painter, Stroke, Sense, epaint::CubicBezierShape};
+use egui::{Pos2, Ui, emath, Frame, Shape, Color32, Rect, Painter, Stroke, Sense/* , epaint::CubicBezierShape*/};
 
 use crate::{LookupCurve, Key, KeyInterpolation};
 
