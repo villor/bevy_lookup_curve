@@ -1,5 +1,7 @@
 use bevy::prelude::*;
-use bevy_egui::{egui, EguiContexts, EguiPlugin};
+use bevy_inspector_egui::bevy_egui::{egui, EguiContexts};
+use bevy_inspector_egui::quick::{ResourceInspectorPlugin, AssetInspectorPlugin};
+
 use bevy_lookup_curve::{
   LookupCurve,
   Key,
@@ -10,20 +12,26 @@ use bevy_lookup_curve::{
 fn main() {
   App::new()
     .add_plugins(DefaultPlugins)
-    .add_plugin(EguiPlugin)
+
     .add_asset::<LookupCurve>()
-    .add_startup_system(curve_test_setup)
-    .add_system(curve_test_window)
+    .add_plugin(AssetInspectorPlugin::<LookupCurve>::default())
+
+    .register_type::<LookupCurveEditorResource>()
+    .add_plugin(ResourceInspectorPlugin::<LookupCurveEditorResource>::default())
+    
+    .add_startup_system(setup)
+    .add_system(editor_window)
     .run();
 }
 
-#[derive(Resource)]
+#[derive(Resource, Reflect, Default)]
+#[reflect(Resource)]
 struct LookupCurveEditorResource {
   curve_handle: Handle<LookupCurve>,
   editor: LookupCurveEditor,
 }
 
-fn curve_test_setup(
+fn setup(
   mut commands: Commands,
   mut lookup_curves: ResMut<Assets<LookupCurve>>,
 ) {
@@ -41,7 +49,7 @@ fn curve_test_setup(
   });
 }
 
-fn curve_test_window(
+fn editor_window(
   mut editor: ResMut<LookupCurveEditorResource>,
   mut contexts: EguiContexts,
   mut curves: ResMut<Assets<LookupCurve>>

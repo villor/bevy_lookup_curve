@@ -20,3 +20,4 @@ egui = "0.21"
 [dev-dependencies]
 bevy = { version = "0.10", default-features = false, features = ["x11", "bevy_winit", "bevy_sprite", "bevy_core_pipeline", "bevy_render", "bevy_asset", "png"] }
 bevy_egui = "0.20"
+bevy-inspector-egui = { version = "0.18", default-features = false }
