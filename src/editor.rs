@@ -205,45 +205,49 @@ impl LookupCurveEditor {
 
   fn paint_grid(&mut self, painter: &Painter, to_screen: &emath::RectTransform) {
     // vertical lines
-    let grid_offset_x = self.offset.x % self.grid_step_x;
-    let grid_x_count = (self.scale.x / self.grid_step_x).ceil() as i32 + 1;
-    for i in 0..grid_x_count {
-      let grid_local_x = (i as f32) * self.grid_step_x - grid_offset_x;
+    if self.grid_step_x > 0.0 {
+      let grid_offset_x = self.offset.x % self.grid_step_x;
+      let grid_x_count = (self.scale.x / self.grid_step_x).ceil() as i32 + 1;
+      for i in 0..grid_x_count {
+        let grid_local_x = (i as f32) * self.grid_step_x - grid_offset_x;
 
-      let line_from = self.offset + Vec2::new(grid_local_x, 0.0);
-      let line_to = self.offset + Vec2::new(grid_local_x, self.scale.y);
+        let line_from = self.offset + Vec2::new(grid_local_x, 0.0);
+        let line_to = self.offset + Vec2::new(grid_local_x, self.scale.y);
 
-      painter.add(Shape::LineSegment {
-        points: [
-          to_screen.transform_pos(self.curve_to_canvas(line_from)),
-          to_screen.transform_pos(self.curve_to_canvas(line_to))
-        ],
-        stroke: Stroke {
-          width: 1.0,
-          color: Color32::DARK_GRAY,
-        },
-      });
+        painter.add(Shape::LineSegment {
+          points: [
+            to_screen.transform_pos(self.curve_to_canvas(line_from)),
+            to_screen.transform_pos(self.curve_to_canvas(line_to))
+          ],
+          stroke: Stroke {
+            width: 1.0,
+            color: Color32::DARK_GRAY,
+          },
+        });
+      }
     }
 
     // horizontal lines
-    let grid_offset_y = self.offset.y % self.grid_step_y;
-    let grid_y_count = (self.scale.y / self.grid_step_y).ceil() as i32 + 1;
-    for i in 0..grid_y_count {
-      let grid_local_y = (i as f32) * self.grid_step_y - grid_offset_y;
+    if self.grid_step_y > 0.0 {
+      let grid_offset_y = self.offset.y % self.grid_step_y;
+      let grid_y_count = (self.scale.y / self.grid_step_y).ceil() as i32 + 1;
+      for i in 0..grid_y_count {
+        let grid_local_y = (i as f32) * self.grid_step_y - grid_offset_y;
 
-      let line_from = self.offset + Vec2::new(0.0, grid_local_y);
-      let line_to = self.offset + Vec2::new(self.scale.x, grid_local_y);
+        let line_from = self.offset + Vec2::new(0.0, grid_local_y);
+        let line_to = self.offset + Vec2::new(self.scale.x, grid_local_y);
 
-      painter.add(Shape::LineSegment {
-        points: [
-          to_screen.transform_pos(self.curve_to_canvas(line_from)),
-          to_screen.transform_pos(self.curve_to_canvas(line_to))
-        ],
-        stroke: Stroke {
-          width: 1.0,
-          color: Color32::DARK_GRAY,
-        },
-      });
+        painter.add(Shape::LineSegment {
+          points: [
+            to_screen.transform_pos(self.curve_to_canvas(line_from)),
+            to_screen.transform_pos(self.curve_to_canvas(line_to))
+          ],
+          stroke: Stroke {
+            width: 1.0,
+            color: Color32::DARK_GRAY,
+          },
+        });
+      }
     }
 
   }
