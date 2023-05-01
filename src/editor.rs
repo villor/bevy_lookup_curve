@@ -1,6 +1,6 @@
 use bevy_reflect::{Reflect, FromReflect};
 use bevy_math::Vec2;
-use egui::{Pos2, Ui, emath, Frame, Shape, Color32, Rect, Painter, Stroke, Sense/* , epaint::CubicBezierShape*/};
+use egui::{Pos2, Ui, emath, Frame, Shape, Color32, Rect, Painter, Stroke, Sense , epaint::CubicBezierShape};
 
 use crate::{LookupCurve, Key, KeyInterpolation};
 
@@ -106,14 +106,14 @@ impl LookupCurveEditor {
                   to_screen.transform_pos(self.curve_to_canvas(key.position)),
                 ], curve_stroke));
               },
-              // KeyInterpolation::Bezier => {
-              //   painter.add(CubicBezierShape::from_points_stroke([
-              //     to_screen.transform_pos(self.curve_to_canvas(prev_key.position)),
-              //     to_screen.transform_pos(self.curve_to_canvas(prev_key.handle_right.position)),
-              //     to_screen.transform_pos(self.curve_to_canvas(key.handle_left.position)),
-              //     to_screen.transform_pos(self.curve_to_canvas(key.position)),
-              //   ], false, Color32::TRANSPARENT, curve_stroke));
-              // }
+              KeyInterpolation::Bezier => {
+                painter.add(CubicBezierShape::from_points_stroke([
+                  to_screen.transform_pos(self.curve_to_canvas(prev_key.position)),
+                  to_screen.transform_pos(self.curve_to_canvas(prev_key.position + prev_key.right_tangent)),
+                  to_screen.transform_pos(self.curve_to_canvas(key.position + key.left_tangent)),
+                  to_screen.transform_pos(self.curve_to_canvas(key.position)),
+                ], false, Color32::TRANSPARENT, curve_stroke));
+              }
             }
           }
 

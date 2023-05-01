@@ -7,7 +7,7 @@ pub mod editor;
 pub enum KeyInterpolation {
   Constant,
   Linear,
-  //Bezier,
+  Bezier,
 }
 
 #[derive(Reflect, FromReflect, Copy, Clone, Debug)]
@@ -136,6 +136,9 @@ impl LookupCurve {
         let key_b = &self.keys[i+1];
         let s = (x - key_a.position.x) / (key_b.position.x - key_a.position.x);
         key_a.position.lerp(key_b.position, s).y
+      },
+      KeyInterpolation::Bezier => {
+        key_a.position.y //todo
       }
     }
 
