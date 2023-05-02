@@ -138,25 +138,88 @@ impl LookupCurve {
         key_a.position.lerp(key_b.position, s).y
       },
       KeyInterpolation::Bezier => {
-        key_a.position.y //todo
+        let key_b = &self.keys[i+1];
+        // TODO: Optimize (we only need to calculate the coefficients when the key is added/modified)
+        CubicSegment::from_bezier_points([
+          key_a.position,
+          key_a.position + key_a.right_tangent,
+          key_b.position + key_b.left_tangent,
+          key_b.position,
+        ]).find_y_given_x(x)
       }
     }
-
-    // binary search for the key
-    // match interpolation
-    //   Constant => key.postition.y,
-    //   Linear | Bezier => {
-    //     get next key
-    //     calculate local x
-    //     match interpolation
-    //       Linear => lerp
-    //       Bezier => {
-    //         constrain tangents to make sure there are no loops
-    //         convert to cubicsegment<Vec2> using new_bezier
-    //         return segment.ease()
-    //       }
-    //   
   }
 }
 
+//
+// The following was copy-pasted from https://github.com/bevyengine/bevy/blob/main/crates/bevy_math/src/cubic_splines.rs
+// and then slightly changed
+//
 
+#[derive(Clone, Debug, Default, PartialEq)]
+struct CubicSegment{
+  coeff: [Vec2; 4],
+}
+
+impl CubicSegment {
+  /// Instantaneous position of a point at parametric value `t`.
+  #[inline]
+  pub fn position(&self, t: f32) -> Vec2 {
+    let [a, b, c, d] = self.coeff;
+    a + b * t + c * t.powi(2) + d * t.powi(3)
+  }
+
+  /// Instantaneous velocity of a point at parametric value `t`.
+  #[inline]
+  pub fn velocity(&self, t: f32) -> Vec2 {
+    let [_, b, c, d] = self.coeff;
+    b + c * 2.0 * t + d * 3.0 * t.powi(2)
+  }
+
+  #[inline]
+  fn find_y_given_x(&self, x: f32) -> f32 {
+    const MAX_ERROR: f32 = 1e-5;
+    const MAX_ITERS: u8 = 8;
+  
+    let mut t_guess = x;
+    let mut pos_guess = Vec2::ZERO;
+    for _ in 0..MAX_ITERS {
+      pos_guess = self.position(t_guess);
+      let error = pos_guess.x - x;
+      if error.abs() <= MAX_ERROR {
+          break;
+      }
+      // Using Newton's method, use the tangent line to estimate a better guess value.
+      let slope = self.velocity(t_guess).x; // dx/dt
+      t_guess -= error / slope;
+    }
+    pos_guess.y
+  }
+
+  #[inline]
+  fn from_bezier_points(control_points: [Vec2; 4]) -> CubicSegment {
+    let char_matrix = [
+      [1., 0., 0., 0.],
+      [-3., 3., 0., 0.],
+      [3., -6., 3., 0.],
+      [-1., 3., -3., 1.],
+    ];
+
+    Self::coefficients(control_points, 1.0, char_matrix)
+  }
+
+  #[inline]
+  fn coefficients(p: [Vec2; 4], multiplier: f32, char_matrix: [[f32; 4]; 4]) -> CubicSegment {
+    let [c0, c1, c2, c3] = char_matrix;
+    // These are the polynomial coefficients, computed by multiplying the characteristic
+    // matrix by the point matrix.
+    let mut coeff = [
+      p[0] * c0[0] + p[1] * c0[1] + p[2] * c0[2] + p[3] * c0[3],
+      p[0] * c1[0] + p[1] * c1[1] + p[2] * c1[2] + p[3] * c1[3],
+      p[0] * c2[0] + p[1] * c2[1] + p[2] * c2[2] + p[3] * c2[3],
+      p[0] * c3[0] + p[1] * c3[1] + p[2] * c3[2] + p[3] * c3[3],
+    ];
+    coeff.iter_mut().for_each(|c| *c *= multiplier);
+    CubicSegment { coeff }
+  }
+}
