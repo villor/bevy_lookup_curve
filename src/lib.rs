@@ -38,11 +38,6 @@ impl Default for Key {
 #[uuid = "3219b5f0-fff6-42fd-9fc8-fd98ff8dae35"]
 pub struct LookupCurve {
   keys: Vec<Key>,
-
-  //#[reflect(ignore)]
-  //bezier: Bezier<Vec2>,
-  // #[reflect(ignore)]
-  // computed_curve: CubicCurve<Vec2>,
 }
 
 impl LookupCurve {
@@ -58,15 +53,6 @@ impl LookupCurve {
     }
   }
 
-  // fn linear(start: Vec2, end: Vec2) {
-  //   Self {
-  //     keys: vec![
-  //       Key { position: start, interpolation: KeyInterpolation::Linear, left_tangent: Vec2::ZERO, right_tangent: Vec2::ZERO },
-  //       Key { position: end, interpolation: KeyInterpolation::Linear }
-  //     ]
-  //   }
-  // }
-
   pub fn keys(&self) -> &[Key] {
     self.keys.as_slice()
   }
@@ -81,7 +67,7 @@ impl LookupCurve {
     }
 
     // binary seach for new idx
-    let new_i = self.find_key_index_given_x(new_value.position.x);
+    let new_i = self.keys.partition_point(|key| key.position.x < new_value.position.x);
     if new_i == i {
       // Key stays in the same spot even though position was changed, overwrite it
       self.keys[i] = *new_value;
@@ -95,18 +81,6 @@ impl LookupCurve {
 
     insert_i
   }
-
-  fn find_key_index_given_x(&self, x: f32) -> usize {
-    let result = self.keys.binary_search_by(|key|
-      key.position.x.partial_cmp(&x).expect("NaN is not allowed")
-    );
-    match result {
-      Ok(i) => i,
-      Err(i) => i,
-    }
-  }
-
-  //pub fn move_key(&mut self, )
 
   /// Find y given x
   pub fn find_y_given_x(&self, x: f32) -> f32 {
@@ -122,14 +96,10 @@ impl LookupCurve {
     }
 
     // Find left key
-    // TODO: Optimize with binary search?
-    let (i, key_a) = self.keys
-      .iter()
-      .enumerate()
-      .rev()
-      .find(|(_, k)| x >= k.position.x)
-      .unwrap();
+    let i = self.keys.partition_point(|key| key.position.x < x) - 1;
+    let key_a = self.keys[i];
 
+    // Interpolate
     match key_a.interpolation {
       KeyInterpolation::Constant => key_a.position.y,
       KeyInterpolation::Linear => {
@@ -151,11 +121,11 @@ impl LookupCurve {
   }
 }
 
-//
-// The following was copy-pasted from https://github.com/bevyengine/bevy/blob/main/crates/bevy_math/src/cubic_splines.rs
-// and then slightly changed
-//
-
+/// Mostly a copy of code from https://github.com/bevyengine/bevy/blob/main/crates/bevy_math/src/cubic_splines.rs
+/// 
+/// Copied because the cubic_splines module does not exactly fit the API we need:
+/// 1. Allow constructing a single CubicSegment from bezier points (without allocating a cubiccurve and without restricting c0 and c1 to 0 and 1)
+/// 2. find_y_given_x needs to be accessible
 #[derive(Clone, Debug, Default, PartialEq)]
 struct CubicSegment{
   coeff: [Vec2; 4],

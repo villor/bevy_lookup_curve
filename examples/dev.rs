@@ -61,9 +61,9 @@ fn editor_window(
 ) {
   
   if editor.move_sample {
-    if editor.sample >= 1.0 {
+    if editor.sample >= 1.5 {
       editor.sample_dir = -1.0;
-    } else if editor.sample <= 0.0 {
+    } else if editor.sample <= -0.5 {
       editor.sample_dir = 1.0;
     }
     editor.sample += time.delta_seconds() * 0.3 * editor.sample_dir;
