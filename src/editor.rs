@@ -124,6 +124,9 @@ impl LookupCurveEditor {
         let knot_radius = 8.0;
         let mut modified_knot = None;
         for (i, knot) in curve.knots().iter().enumerate() {
+          let prev_knot = if i > 0 { Some(&curve.knots()[i - 1]) } else { None };
+          let next_knot = if i < curve.knots().len() - 1 { Some(&curve.knots()[i + 1]) } else { None };
+
           let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position));
           let interact_rect = Rect::from_center_size(point_in_screen, emath::Vec2::splat(2.0 * knot_radius));
           let interact_id = response.id.with(knot.id);
@@ -156,6 +159,20 @@ impl LookupCurveEditor {
               }));
             }
 
+            let corrected = knot.right_tangent_corrected(next_knot);
+            let corrected_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position + corrected));
+            if corrected != knot.right_tangent {
+              painter.add(Shape::dashed_line(&[to_screen.transform_pos(self.curve_to_canvas(knot.position)), corrected_in_screen], Stroke::new(1.0, Color32::GRAY), 4.0, 2.0));
+              painter.add(Shape::dashed_line(&[corrected_in_screen, point_in_screen], Stroke::new(1.0, Color32::RED), 4.0, 2.0));
+              painter.add(Shape::circle_filled(
+                corrected_in_screen,
+                2.0,
+                Color32::RED
+              ));
+            } else {
+              painter.add(Shape::dashed_line(&[to_screen.transform_pos(self.curve_to_canvas(knot.position)), corrected_in_screen], Stroke::new(1.0, Color32::GRAY), 4.0, 2.0));
+            }
+
             painter.add(Shape::circle_filled(
               point_in_screen,
               3.0,
@@ -175,6 +192,20 @@ impl LookupCurveEditor {
                 left_tangent: knot.left_tangent + self.canvas_to_curve_vec(interact_response.drag_delta()),
                 ..*knot
               }));
+            }
+
+            let corrected = knot.left_tangent_corrected(prev_knot);
+            let corrected_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position + corrected));
+            if corrected != knot.left_tangent {
+              painter.add(Shape::dashed_line(&[to_screen.transform_pos(self.curve_to_canvas(knot.position)), corrected_in_screen], Stroke::new(1.0, Color32::GRAY), 4.0, 2.0));
+              painter.add(Shape::dashed_line(&[corrected_in_screen, point_in_screen], Stroke::new(1.0, Color32::RED), 4.0, 2.0));
+              painter.add(Shape::circle_filled(
+                corrected_in_screen,
+                2.0,
+                Color32::RED
+              ));
+            } else {
+              painter.add(Shape::dashed_line(&[to_screen.transform_pos(self.curve_to_canvas(knot.position)), corrected_in_screen], Stroke::new(1.0, Color32::GRAY), 4.0, 2.0));
             }
 
             painter.add(Shape::circle_filled(
