@@ -109,8 +109,8 @@ impl LookupCurveEditor {
               KnotInterpolation::Bezier => {
                 painter.add(CubicBezierShape::from_points_stroke([
                   to_screen.transform_pos(self.curve_to_canvas(prev_knot.position)),
-                  to_screen.transform_pos(self.curve_to_canvas(prev_knot.position + prev_knot.right_tangent)),
-                  to_screen.transform_pos(self.curve_to_canvas(knot.position + knot.left_tangent)),
+                  to_screen.transform_pos(self.curve_to_canvas(prev_knot.position + prev_knot.right_tangent_corrected(Some(knot)))),
+                  to_screen.transform_pos(self.curve_to_canvas(knot.position + knot.left_tangent_corrected(Some(prev_knot)))),
                   to_screen.transform_pos(self.curve_to_canvas(knot.position)),
                 ], false, Color32::TRANSPARENT, curve_stroke));
               }

@@ -21,10 +21,48 @@ pub struct Knot {
   /// Identifier used by editor operations because index might change during modification
   pub id: usize,
   
-  /// Left tangent relative to knot position. x should never be > 0
+  /// Left tangent relative to knot position. x above 0 will be clamped to 0
   pub left_tangent: Vec2,
-  /// Right tangent relative to knot position. x should never be < 0
+  /// Right tangent relative to knot position. x below 0 will be clamped to 0
   pub right_tangent: Vec2,
+}
+
+impl Knot {
+  // TODO: Refactor repetitive *_corrected-implementations
+
+  /// Returns the left tangent of this knot, corrected between the previous knot and this one.
+  /// Ensures the curve does not ever go backwards.
+  fn left_tangent_corrected(&self, prev_knot: Option<&Knot>) -> Vec2 {
+    if self.left_tangent.x >= 0.0 {
+      return Vec2::new(0.0, self.left_tangent.y);
+    }
+
+    if let Some(prev_knot) = prev_knot {
+      let min_x = prev_knot.position.x - self.position.x;
+      if self.left_tangent.x < min_x {
+        return Vec2::new(min_x, self.left_tangent.y * (min_x / self.left_tangent.x));
+      }
+    }
+
+    self.left_tangent
+  }
+
+  /// Returns the right tangent of this knot, corrected between the next knot and this one.
+  /// Ensures the curve does not ever go backwards.
+  fn right_tangent_corrected(&self, next_knot: Option<&Knot>) -> Vec2 {
+    if self.right_tangent.x <= 0.0 {
+      return Vec2::new(0.0, self.right_tangent.y);
+    }
+
+    if let Some(next_knot) = next_knot {
+      let max_x = next_knot.position.x - self.position.x;
+      if self.right_tangent.x > max_x {
+        return Vec2::new(max_x, self.right_tangent.y * (max_x / self.right_tangent.x));
+      }
+    }
+
+    self.right_tangent
+  }
 }
 
 impl Default for Knot {
@@ -118,8 +156,8 @@ impl LookupCurve {
         // TODO: Optimize (we only need to calculate the coefficients when the knot is added/modified)
         CubicSegment::from_bezier_points([
           knot_a.position,
-          knot_a.position + knot_a.right_tangent,
-          knot_b.position + knot_b.left_tangent,
+          knot_a.position + knot_a.right_tangent_corrected(Some(knot_b)),
+          knot_b.position + knot_b.left_tangent_corrected(Some(&knot_a)),
           knot_b.position,
         ]).find_y_given_x(x)
       }
