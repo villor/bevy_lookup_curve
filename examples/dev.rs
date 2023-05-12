@@ -4,8 +4,8 @@ use bevy_inspector_egui::quick::{ResourceInspectorPlugin, AssetInspectorPlugin};
 
 use bevy_lookup_curve::{
   LookupCurve,
-  Key,
-  KeyInterpolation,
+  Knot,
+  KnotInterpolation,
   editor::LookupCurveEditor,
 };
 
@@ -39,9 +39,9 @@ fn setup(
   mut lookup_curves: ResMut<Assets<LookupCurve>>,
 ) {
   let handle = lookup_curves.add(LookupCurve::new(vec![
-    Key { id: 0, position: Vec2::ZERO, interpolation: KeyInterpolation::Constant, ..default() },
-    Key { id: 1, position: Vec2::new(0.2, 0.4), interpolation: KeyInterpolation::Linear, ..default() },
-    Key { id: 2, position: Vec2::ONE, interpolation: KeyInterpolation::Linear, ..default() }
+    Knot { id: 0, position: Vec2::ZERO, interpolation: KnotInterpolation::Constant, ..default() },
+    Knot { id: 1, position: Vec2::new(0.2, 0.4), interpolation: KnotInterpolation::Linear, ..default() },
+    Knot { id: 2, position: Vec2::ONE, interpolation: KnotInterpolation::Linear, ..default() }
   ]));
 
   commands.insert_resource(LookupCurveEditorResource {

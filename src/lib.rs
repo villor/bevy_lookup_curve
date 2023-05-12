@@ -4,28 +4,34 @@ use bevy_reflect::{Reflect, FromReflect, TypeUuid};
 pub mod editor;
 
 #[derive(Reflect, FromReflect, Copy, Clone, Debug)]
-pub enum KeyInterpolation {
+pub enum KnotInterpolation {
   Constant,
   Linear,
   Bezier,
 }
 
 #[derive(Reflect, FromReflect, Copy, Clone, Debug)]
-pub struct Key {
+pub struct Knot {
+  /// The position of this knot in curve space
   pub position: Vec2,
-  /// Interpolation used between this and the next key
-  pub interpolation: KeyInterpolation,
 
+  /// Interpolation used between this and the next knot
+  pub interpolation: KnotInterpolation,
+
+  /// Identifier used by editor operations because index might change during modification
   pub id: usize,
+  
+  /// Left tangent relative to knot position. x should never be > 0
   pub left_tangent: Vec2,
+  /// Right tangent relative to knot position. x should never be < 0
   pub right_tangent: Vec2,
 }
 
-impl Default for Key {
+impl Default for Knot {
   fn default() -> Self {
     Self {
       position: Vec2::ZERO,
-      interpolation: KeyInterpolation::Linear,
+      interpolation: KnotInterpolation::Linear,
       id: 0,
       right_tangent: Vec2::new(0.1, 0.0),
       left_tangent: Vec2::new(-0.1, 0.0),
@@ -37,84 +43,84 @@ impl Default for Key {
 #[derive(Debug, TypeUuid, Reflect, FromReflect)]
 #[uuid = "3219b5f0-fff6-42fd-9fc8-fd98ff8dae35"]
 pub struct LookupCurve {
-  keys: Vec<Key>,
+  knots: Vec<Knot>,
 }
 
 impl LookupCurve {
-  pub fn new(mut keys: Vec<Key>) -> Self {
-    keys.sort_by(|a, b|
+  pub fn new(mut knots: Vec<Knot>) -> Self {
+    knots.sort_by(|a, b|
       a.position.x
         .partial_cmp(&b.position.x)
         .expect("NaN is not allowed")
     );
     
     Self {
-      keys,
+      knots,
     }
   }
 
-  pub fn keys(&self) -> &[Key] {
-    self.keys.as_slice()
+  pub fn knots(&self) -> &[Knot] {
+    self.knots.as_slice()
   }
 
-  /// Modifies an existing key in the lookup curve. Returns the new (possibly unchanged) index of the key.
-  fn modify_key(&mut self, i: usize, new_value: &Key) -> usize {
-    let old_value = self.keys[i];
+  /// Modifies an existing knot in the lookup curve. Returns the new (possibly unchanged) index of the knot.
+  fn modify_knot(&mut self, i: usize, new_value: &Knot) -> usize {
+    let old_value = self.knots[i];
     if old_value.position == new_value.position {
-      // The key has not been moved, simply overwrite it
-      self.keys[i] = *new_value;
+      // The knot has not been moved, simply overwrite it
+      self.knots[i] = *new_value;
       return i;
     }
 
     // binary seach for new idx
-    let new_i = self.keys.partition_point(|key| key.position.x < new_value.position.x);
+    let new_i = self.knots.partition_point(|knot| knot.position.x < new_value.position.x);
     if new_i == i {
-      // Key stays in the same spot even though position was changed, overwrite it
-      self.keys[i] = *new_value;
+      // knot stays in the same spot even though position was changed, overwrite it
+      self.knots[i] = *new_value;
       return i;
     }
 
-    self.keys.remove(i);
+    self.knots.remove(i);
 
     let insert_i = if i < new_i { new_i - 1 } else { new_i };
-    self.keys.insert(insert_i, *new_value);
+    self.knots.insert(insert_i, *new_value);
 
     insert_i
   }
 
   /// Find y given x
   pub fn find_y_given_x(&self, x: f32) -> f32 {
-    // Return repeated constant values outside of key range
-    if self.keys.is_empty() {
+    // Return repeated constant values outside of knot range
+    if self.knots.is_empty() {
       return 0.0;
     }
-    if self.keys.len() == 1 || x <= self.keys[0].position.x {
-      return self.keys[0].position.y;
+    if self.knots.len() == 1 || x <= self.knots[0].position.x {
+      return self.knots[0].position.y;
     }
-    if x >= self.keys[self.keys.len() - 1].position.x {
-      return self.keys[self.keys.len() - 1].position.y;
+    if x >= self.knots[self.knots.len() - 1].position.x {
+      return self.knots[self.knots.len() - 1].position.y;
     }
 
-    // Find left key
-    let i = self.keys.partition_point(|key| key.position.x < x) - 1;
-    let key_a = self.keys[i];
+    // Find left knot
+    let i = self.knots.partition_point(|knot| knot.position.x < x) - 1;
+    let knot_a = self.knots[i];
 
     // Interpolate
-    match key_a.interpolation {
-      KeyInterpolation::Constant => key_a.position.y,
-      KeyInterpolation::Linear => {
-        let key_b = &self.keys[i+1];
-        let s = (x - key_a.position.x) / (key_b.position.x - key_a.position.x);
-        key_a.position.lerp(key_b.position, s).y
+    match knot_a.interpolation {
+      KnotInterpolation::Constant => knot_a.position.y,
+      KnotInterpolation::Linear => {
+        let knot_b = &self.knots[i+1];
+        let s = (x - knot_a.position.x) / (knot_b.position.x - knot_a.position.x);
+        knot_a.position.lerp(knot_b.position, s).y
       },
-      KeyInterpolation::Bezier => {
-        let key_b = &self.keys[i+1];
-        // TODO: Optimize (we only need to calculate the coefficients when the key is added/modified)
+      KnotInterpolation::Bezier => {
+        let knot_b = &self.knots[i+1];
+        // TODO: Optimize (we only need to calculate the coefficients when the knot is added/modified)
         CubicSegment::from_bezier_points([
-          key_a.position,
-          key_a.position + key_a.right_tangent,
-          key_b.position + key_b.left_tangent,
-          key_b.position,
+          knot_a.position,
+          knot_a.position + knot_a.right_tangent,
+          knot_b.position + knot_b.left_tangent,
+          knot_b.position,
         ]).find_y_given_x(x)
       }
     }

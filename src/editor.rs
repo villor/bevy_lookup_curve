@@ -2,7 +2,7 @@ use bevy_reflect::{Reflect, FromReflect};
 use bevy_math::Vec2;
 use egui::{Pos2, Ui, emath, Frame, Shape, Color32, Rect, Painter, Stroke, Sense , epaint::CubicBezierShape};
 
-use crate::{LookupCurve, Key, KeyInterpolation};
+use crate::{LookupCurve, Knot, KnotInterpolation};
 
 #[derive(Reflect, FromReflect)]
 pub struct LookupCurveEditor {
@@ -88,71 +88,71 @@ impl LookupCurveEditor {
           width: 2.0,
         };
 
-        // TODO: Only keys inside viewport
-        let mut prev_key: Option<&Key> = None;
-        for key in curve.keys().iter() {
-          if let Some(prev_key) = prev_key {
-            match prev_key.interpolation {
-              KeyInterpolation::Constant => {
+        // TODO: Only knots inside viewport
+        let mut prev_knot: Option<&Knot> = None;
+        for knot in curve.knots().iter() {
+          if let Some(prev_knot) = prev_knot {
+            match prev_knot.interpolation {
+              KnotInterpolation::Constant => {
                 painter.add(Shape::line(vec![
-                  to_screen.transform_pos(self.curve_to_canvas(prev_key.position)),
-                  to_screen.transform_pos(self.curve_to_canvas(Vec2::new(key.position.x, prev_key.position.y))),
-                  to_screen.transform_pos(self.curve_to_canvas(key.position)),
+                  to_screen.transform_pos(self.curve_to_canvas(prev_knot.position)),
+                  to_screen.transform_pos(self.curve_to_canvas(Vec2::new(knot.position.x, prev_knot.position.y))),
+                  to_screen.transform_pos(self.curve_to_canvas(knot.position)),
                 ], curve_stroke));
               },
-              KeyInterpolation::Linear => {
+              KnotInterpolation::Linear => {
                 painter.add(Shape::line(vec![
-                  to_screen.transform_pos(self.curve_to_canvas(prev_key.position)),
-                  to_screen.transform_pos(self.curve_to_canvas(key.position)),
+                  to_screen.transform_pos(self.curve_to_canvas(prev_knot.position)),
+                  to_screen.transform_pos(self.curve_to_canvas(knot.position)),
                 ], curve_stroke));
               },
-              KeyInterpolation::Bezier => {
+              KnotInterpolation::Bezier => {
                 painter.add(CubicBezierShape::from_points_stroke([
-                  to_screen.transform_pos(self.curve_to_canvas(prev_key.position)),
-                  to_screen.transform_pos(self.curve_to_canvas(prev_key.position + prev_key.right_tangent)),
-                  to_screen.transform_pos(self.curve_to_canvas(key.position + key.left_tangent)),
-                  to_screen.transform_pos(self.curve_to_canvas(key.position)),
+                  to_screen.transform_pos(self.curve_to_canvas(prev_knot.position)),
+                  to_screen.transform_pos(self.curve_to_canvas(prev_knot.position + prev_knot.right_tangent)),
+                  to_screen.transform_pos(self.curve_to_canvas(knot.position + knot.left_tangent)),
+                  to_screen.transform_pos(self.curve_to_canvas(knot.position)),
                 ], false, Color32::TRANSPARENT, curve_stroke));
               }
             }
           }
 
-          prev_key = Some(key);
+          prev_knot = Some(knot);
         }
 
         // Handles
-        let key_radius = 8.0;
-        let mut modified_key = None;
-        for (i, key) in curve.keys().iter().enumerate() {
-          let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(key.position));
-          let interact_rect = Rect::from_center_size(point_in_screen, emath::Vec2::splat(2.0 * key_radius));
-          let interact_id = response.id.with(key.id);
+        let knot_radius = 8.0;
+        let mut modified_knot = None;
+        for (i, knot) in curve.knots().iter().enumerate() {
+          let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position));
+          let interact_rect = Rect::from_center_size(point_in_screen, emath::Vec2::splat(2.0 * knot_radius));
+          let interact_id = response.id.with(knot.id);
           let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
 
           if interact_response.dragged() {
-            modified_key = Some((i, Key {
-              position: key.position + self.canvas_to_curve_vec(interact_response.drag_delta()),
-              ..*key
+            modified_knot = Some((i, Knot {
+              position: knot.position + self.canvas_to_curve_vec(interact_response.drag_delta()),
+              ..*knot
             }));
           }
 
           painter.add(Shape::circle_filled(
-            to_screen.transform_pos(self.curve_to_canvas(key.position)),
+            to_screen.transform_pos(self.curve_to_canvas(knot.position)),
             3.0,
             Color32::LIGHT_GREEN
           ));
 
           // right tangent
           {
-            let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(key.position + key.right_tangent));
-            let interact_rect = Rect::from_center_size(point_in_screen, emath::Vec2::splat(2.0 * key_radius));
+            let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position + knot.right_tangent));
+            let interact_rect = Rect::from_center_size(point_in_screen, emath::Vec2::splat(2.0 * knot_radius));
             let interact_id = interact_id.with(0);
             let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
 
             if interact_response.dragged() {
-              modified_key = Some((i, Key {
-                right_tangent: key.right_tangent + self.canvas_to_curve_vec(interact_response.drag_delta()),
-                ..*key
+              modified_knot = Some((i, Knot {
+                right_tangent: knot.right_tangent + self.canvas_to_curve_vec(interact_response.drag_delta()),
+                ..*knot
               }));
             }
 
@@ -165,15 +165,15 @@ impl LookupCurveEditor {
 
           // left tangent
           {
-            let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(key.position + key.left_tangent));
-            let interact_rect = Rect::from_center_size(point_in_screen, emath::Vec2::splat(2.0 * key_radius));
+            let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position + knot.left_tangent));
+            let interact_rect = Rect::from_center_size(point_in_screen, emath::Vec2::splat(2.0 * knot_radius));
             let interact_id = interact_id.with(1);
             let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
 
             if interact_response.dragged() {
-              modified_key = Some((i, Key {
-                left_tangent: key.left_tangent + self.canvas_to_curve_vec(interact_response.drag_delta()),
-                ..*key
+              modified_knot = Some((i, Knot {
+                left_tangent: knot.left_tangent + self.canvas_to_curve_vec(interact_response.drag_delta()),
+                ..*knot
               }));
             }
 
@@ -186,8 +186,8 @@ impl LookupCurveEditor {
         }
 
         // Apply modifications
-        if let Some((i, key)) = modified_key {
-          curve.modify_key(i, &key);
+        if let Some((i, knot)) = modified_knot {
+          curve.modify_knot(i, &knot);
         }
 
         // Sample to visualize and test find_y_given_x
@@ -252,69 +252,3 @@ impl LookupCurveEditor {
 
   }
 }
-
-
-// fn curve_editor_render(
-//   mut painter: ShapePainter,
-//   editors: Query<&LookupCurveEditor>,
-//   lookup_curves: Res<Assets<LookupCurve>>,
-// ) {
-//   for editor in editors.iter() {
-//     if let Some(curve) = lookup_curves.get(&editor.curve) {
-//       // Axes
-//       painter.color = Color::BLACK;
-//       painter.thickness = 1.0;
-//       painter.cap = Cap::None;
-//       painter.line(Vec3::new(0.0, 0.0, 0.0), Vec3::new(editor.width, 0.0, 0.0));
-//       painter.line(Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.0, editor.height, 0.0));
-
-//       painter.color = Color::LIME_GREEN;
-//       for key in curve.keys.iter() {
-//         painter.transform.translation = (key.position * editor.scale).extend(0.0);
-//         painter.circle(3.0);
-//       }
-
-//       painter.transform.translation = Vec3::ZERO;
-//       painter.thickness = 2.0;
-//       painter.cap = Cap::Round;
-
-//       let mut prev_x = 0.0;
-//       let mut prev_y = 0.0;
-//       for a in 0..=editor.num_samples {
-//         let editor_x = editor.offset.x + ((a as f32) / (editor.num_samples as f32)) * editor.width;
-//         let curve_x = editor_x / editor.scale.x;
-//         let curve_y = curve.find_y_given_x(curve_x);
-//         let editor_y = curve_y * editor.scale.y;
-
-//         if a > 0 {
-//           painter.line(Vec3::new(prev_x, prev_y, 0.0), Vec3::new(editor_x, editor_y, 0.0));
-//         }
-
-//         prev_x = editor_x;
-//         prev_y = editor_y;
-//       }
-
-//       // for a in 0..num_segments {
-//       //   let b = a + 1;
-
-//       //   let editor_ax = ((a as f32) / (num_segments as f32)) * editor_width;
-//       //   let editor_bx = ((b as f32) / (num_segments as f32)) * editor_width;
-
-//       //   let ax = (a as f32) / (num_segments as f32) * curve_width;
-//       //   let bx = (b as f32) / (num_segments as f32) * curve_width;
-//       //   let ay = curve.find_y_given_x(ax);
-//       //   let by = curve.find_y_given_x(bx);
-
-//       //   let norm_ax = 
-
-//       //   let line_ax = ax / curve_width * editor_width;
-//       //   let line_ay = ay / curve_width * editor_height;
-//       //   let line_bx = bx / curve_width * editor_width;
-//       //   let line_by = by / curve_width * editor_height;
-
-//       //   painter.cap = Cap::Round;
-//       //   painter.line(Vec3::new(line_ax, line_ay, 0.0), Vec3::new(line_bx, line_by, 0.0));
-//       // }
-//     }
-//   }
-// }
