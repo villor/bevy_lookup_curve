@@ -75,10 +75,20 @@ impl LookupCurveEditor {
 
       if let Some(hover_pos) = response.hover_pos() {
         self.hover_point = self.canvas_to_curve(to_canvas.transform_pos(hover_pos));
+
+        // Zooming
+        ui.input(|input| {
+          let scroll_delta = input.scroll_delta.y;
+          if scroll_delta != 0.0 {
+            self.scale *= 1.0 + -scroll_delta * 0.001;
+            // TODO: adjust offset accordingly
+          }
+        });
       } else {
         self.hover_point = Vec2::ZERO;
       }
 
+      // Panning
       if response.dragged_by(egui::PointerButton::Middle) {
         self.offset -= self.canvas_to_curve_vec(response.drag_delta());
       }
