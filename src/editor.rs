@@ -58,7 +58,7 @@ impl LookupCurveEditor {
 
     Frame::canvas(ui.style()).show(ui, |ui| {
       let (response, painter) =
-        ui.allocate_painter(emath::Vec2::new(ui.available_width(), ui.available_height()), Sense::hover());
+        ui.allocate_painter(emath::Vec2::new(ui.available_width(), ui.available_height()), Sense::click_and_drag());
 
       let to_screen = emath::RectTransform::from_to(
         Rect::from_min_size(Pos2::ZERO, response.rect.size()),
@@ -77,6 +77,10 @@ impl LookupCurveEditor {
         self.hover_point = self.canvas_to_curve(to_canvas.transform_pos(hover_pos));
       } else {
         self.hover_point = Vec2::ZERO;
+      }
+
+      if response.dragged_by(egui::PointerButton::Middle) {
+        self.offset -= self.canvas_to_curve_vec(response.drag_delta());
       }
 
       self.paint_grid(&painter, &to_screen);
@@ -132,7 +136,7 @@ impl LookupCurveEditor {
           let interact_id = response.id.with(knot.id);
           let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
 
-          if interact_response.dragged() {
+          if interact_response.dragged_by(egui::PointerButton::Primary) {
             modified_knot = Some((i, Knot {
               position: knot.position + self.canvas_to_curve_vec(interact_response.drag_delta()),
               ..*knot
@@ -152,7 +156,7 @@ impl LookupCurveEditor {
             let interact_id = interact_id.with(0);
             let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
 
-            if interact_response.dragged() {
+            if interact_response.dragged_by(egui::PointerButton::Primary) {
               modified_knot = Some((i, Knot {
                 right_tangent: knot.right_tangent + self.canvas_to_curve_vec(interact_response.drag_delta()),
                 ..*knot
@@ -187,7 +191,7 @@ impl LookupCurveEditor {
             let interact_id = interact_id.with(1);
             let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
 
-            if interact_response.dragged() {
+            if interact_response.dragged_by(egui::PointerButton::Primary) {
               modified_knot = Some((i, Knot {
                 left_tangent: knot.left_tangent + self.canvas_to_curve_vec(interact_response.drag_delta()),
                 ..*knot
