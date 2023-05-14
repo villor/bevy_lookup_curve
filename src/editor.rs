@@ -137,6 +137,7 @@ impl LookupCurveEditor {
         // Handles
         let knot_radius = 8.0;
         let mut modified_knot = None;
+        let mut deleted_knot_index = None;
         for (i, knot) in curve.knots().iter().enumerate() {
           let prev_knot = if i > 0 { Some(&curve.knots()[i - 1]) } else { None };
           let next_knot = if i < curve.knots().len() - 1 { Some(&curve.knots()[i + 1]) } else { None };
@@ -152,6 +153,36 @@ impl LookupCurveEditor {
               ..*knot
             }));
           }
+
+          interact_response.context_menu(|ui| {
+            ui.label("Interpolation");
+            if ui.radio(matches!(knot.interpolation, KnotInterpolation::Constant), "Constant").clicked() {
+              modified_knot = Some((i, Knot {
+                interpolation: KnotInterpolation::Constant,
+                ..*knot
+              }));
+              ui.close_menu();
+            }
+            if ui.radio(matches!(knot.interpolation, KnotInterpolation::Linear), "Linear").clicked() {
+              modified_knot = Some((i, Knot {
+                interpolation: KnotInterpolation::Linear,
+                ..*knot
+              }));
+              ui.close_menu();
+            }
+            if ui.radio(matches!(knot.interpolation, KnotInterpolation::Bezier), "Bezier").clicked() {
+              modified_knot = Some((i, Knot {
+                interpolation: KnotInterpolation::Bezier,
+                ..*knot
+              }));
+              ui.close_menu();
+            }
+            ui.label("Actions");
+            if ui.button("Delete knot").clicked() {
+              deleted_knot_index = Some(i);
+              ui.close_menu();
+            }
+          });
 
           painter.add(Shape::circle_filled(
             to_screen.transform_pos(self.curve_to_canvas(knot.position)),
@@ -233,6 +264,9 @@ impl LookupCurveEditor {
         // Apply modifications
         if let Some((i, knot)) = modified_knot {
           curve.modify_knot(i, &knot);
+        }
+        if let Some(i) = deleted_knot_index {
+          curve.delete_knot(i);
         }
 
         // Sample to visualize and test find_y_given_x

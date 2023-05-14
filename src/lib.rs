@@ -126,6 +126,11 @@ impl LookupCurve {
     insert_i
   }
 
+  /// Deletes a knot given index
+  fn delete_knot(&mut self, i: usize) {
+    self.knots.remove(i);
+  }
+
   /// Find y given x
   pub fn find_y_given_x(&self, x: f32) -> f32 {
     // Return repeated constant values outside of knot range
