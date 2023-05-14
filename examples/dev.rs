@@ -39,9 +39,9 @@ fn setup(
   mut lookup_curves: ResMut<Assets<LookupCurve>>,
 ) {
   let handle = lookup_curves.add(LookupCurve::new(vec![
-    Knot { id: 0, position: Vec2::ZERO, interpolation: KnotInterpolation::Constant, ..default() },
-    Knot { id: 1, position: Vec2::new(0.2, 0.4), interpolation: KnotInterpolation::Linear, ..default() },
-    Knot { id: 2, position: Vec2::ONE, interpolation: KnotInterpolation::Linear, ..default() }
+    Knot { position: Vec2::ZERO, interpolation: KnotInterpolation::Constant, ..default() },
+    Knot { position: Vec2::new(0.2, 0.4), interpolation: KnotInterpolation::Linear, ..default() },
+    Knot { position: Vec2::ONE, interpolation: KnotInterpolation::Linear, ..default() }
   ]));
 
   commands.insert_resource(LookupCurveEditorResource {
@@ -73,7 +73,7 @@ fn editor_window(
     egui::Window::new("Lookup curve")
       .show(contexts.ctx_mut(), |ui| {
         let sample = editor.sample;
-        editor.editor.ui(ui, std::iter::once(curve), Some(sample));
+        editor.editor.ui(ui, curve, Some(sample));
       });
   }
 }

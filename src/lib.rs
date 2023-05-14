@@ -1,3 +1,5 @@
+use std::sync::atomic::{AtomicUsize, Ordering};
+
 use bevy_math::Vec2;
 use bevy_reflect::{Reflect, FromReflect, TypeUuid};
 
@@ -65,12 +67,14 @@ impl Knot {
   }
 }
 
+static KNOT_ID_COUNTER: AtomicUsize = AtomicUsize::new(1);
+
 impl Default for Knot {
   fn default() -> Self {
     Self {
       position: Vec2::ZERO,
       interpolation: KnotInterpolation::Linear,
-      id: 0,
+      id: KNOT_ID_COUNTER.fetch_add(1, Ordering::Relaxed),
       right_tangent: Vec2::new(0.1, 0.0),
       left_tangent: Vec2::new(-0.1, 0.0),
     }
@@ -99,6 +103,18 @@ impl LookupCurve {
 
   pub fn knots(&self) -> &[Knot] {
     self.knots.as_slice()
+  }
+
+  /// Adds a knot. Returns the index of the added knot.
+  fn add_knot(&mut self, knot: Knot) -> usize {
+    if self.knots.is_empty() || knot.position.x > self.knots.last().unwrap().position.x {
+      self.knots.push(knot);
+      return self.knots.len() - 1;
+    }
+
+    let i = self.knots.partition_point(|k| k.position.x < knot.position.x);
+    self.knots.insert(i, knot);
+    i
   }
 
   /// Modifies an existing knot in the lookup curve. Returns the new (possibly unchanged) index of the knot.

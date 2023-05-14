@@ -53,11 +53,11 @@ impl LookupCurveEditor {
     canvas / self.editor_size * self.scale
   }
 
-  pub fn ui<'a>(&mut self, ui: &mut Ui, curves: impl Iterator<Item = &'a mut LookupCurve>, sample: Option<f32>) {
+  pub fn ui(&mut self, ui: &mut Ui, curve: &mut LookupCurve, sample: Option<f32>) {
     ui.label(format!("x = {}, y = {}", self.hover_point.x, self.hover_point.y));
 
     Frame::canvas(ui.style()).show(ui, |ui| {
-      let (response, painter) =
+      let (mut response, painter) =
         ui.allocate_painter(emath::Vec2::new(ui.available_width(), ui.available_height()), Sense::click_and_drag());
 
       let to_screen = emath::RectTransform::from_to(
@@ -92,191 +92,200 @@ impl LookupCurveEditor {
       if response.dragged_by(egui::PointerButton::Middle) {
         self.offset -= self.canvas_to_curve_vec(response.drag_delta());
       }
+      
+      response = response.context_menu(|ui| {
+        let menu_pos = ui.min_rect().left_top();// hacky and not entirely correct
+        if ui.button("Add knot").clicked() {
+          curve.add_knot(Knot {
+            position: self.canvas_to_curve(to_canvas.transform_pos(menu_pos)),
+            ..Default::default()
+          });
+          ui.close_menu();
+        }
+      });
 
       self.paint_grid(&painter, &to_screen);
 
       // Draw the curve
-      for curve in curves {
-        let curve_stroke = Stroke {
-          color: Color32::GREEN,
-          width: 2.0,
-        };
+      let curve_stroke = Stroke {
+        color: Color32::GREEN,
+        width: 2.0,
+      };
 
-        // TODO: Only knots inside viewport
-        let mut prev_knot: Option<&Knot> = None;
-        for knot in curve.knots().iter() {
-          if let Some(prev_knot) = prev_knot {
-            match prev_knot.interpolation {
-              KnotInterpolation::Constant => {
-                painter.add(Shape::line(vec![
-                  to_screen.transform_pos(self.curve_to_canvas(prev_knot.position)),
-                  to_screen.transform_pos(self.curve_to_canvas(Vec2::new(knot.position.x, prev_knot.position.y))),
-                  to_screen.transform_pos(self.curve_to_canvas(knot.position)),
-                ], curve_stroke));
-              },
-              KnotInterpolation::Linear => {
-                painter.add(Shape::line(vec![
-                  to_screen.transform_pos(self.curve_to_canvas(prev_knot.position)),
-                  to_screen.transform_pos(self.curve_to_canvas(knot.position)),
-                ], curve_stroke));
-              },
-              KnotInterpolation::Bezier => {
-                painter.add(CubicBezierShape::from_points_stroke([
-                  to_screen.transform_pos(self.curve_to_canvas(prev_knot.position)),
-                  to_screen.transform_pos(self.curve_to_canvas(prev_knot.position + prev_knot.right_tangent_corrected(Some(knot)))),
-                  to_screen.transform_pos(self.curve_to_canvas(knot.position + knot.left_tangent_corrected(Some(prev_knot)))),
-                  to_screen.transform_pos(self.curve_to_canvas(knot.position)),
-                ], false, Color32::TRANSPARENT, curve_stroke));
-              }
+      // TODO: Only knots inside viewport
+      let mut prev_knot: Option<&Knot> = None;
+      for knot in curve.knots().iter() {
+        if let Some(prev_knot) = prev_knot {
+          match prev_knot.interpolation {
+            KnotInterpolation::Constant => {
+              painter.add(Shape::line(vec![
+                to_screen.transform_pos(self.curve_to_canvas(prev_knot.position)),
+                to_screen.transform_pos(self.curve_to_canvas(Vec2::new(knot.position.x, prev_knot.position.y))),
+                to_screen.transform_pos(self.curve_to_canvas(knot.position)),
+              ], curve_stroke));
+            },
+            KnotInterpolation::Linear => {
+              painter.add(Shape::line(vec![
+                to_screen.transform_pos(self.curve_to_canvas(prev_knot.position)),
+                to_screen.transform_pos(self.curve_to_canvas(knot.position)),
+              ], curve_stroke));
+            },
+            KnotInterpolation::Bezier => {
+              painter.add(CubicBezierShape::from_points_stroke([
+                to_screen.transform_pos(self.curve_to_canvas(prev_knot.position)),
+                to_screen.transform_pos(self.curve_to_canvas(prev_knot.position + prev_knot.right_tangent_corrected(Some(knot)))),
+                to_screen.transform_pos(self.curve_to_canvas(knot.position + knot.left_tangent_corrected(Some(prev_knot)))),
+                to_screen.transform_pos(self.curve_to_canvas(knot.position)),
+              ], false, Color32::TRANSPARENT, curve_stroke));
             }
           }
-
-          prev_knot = Some(knot);
         }
 
-        // Handles
-        let knot_radius = 8.0;
-        let mut modified_knot = None;
-        let mut deleted_knot_index = None;
-        for (i, knot) in curve.knots().iter().enumerate() {
-          let prev_knot = if i > 0 { Some(&curve.knots()[i - 1]) } else { None };
-          let next_knot = if i < curve.knots().len() - 1 { Some(&curve.knots()[i + 1]) } else { None };
+        prev_knot = Some(knot);
+      }
 
-          let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position));
+      // Handles
+      let knot_radius = 8.0;
+      let mut modified_knot = None;
+      let mut deleted_knot_index = None;
+      for (i, knot) in curve.knots().iter().enumerate() {
+        let prev_knot = if i > 0 { Some(&curve.knots()[i - 1]) } else { None };
+        let next_knot = if i < curve.knots().len() - 1 { Some(&curve.knots()[i + 1]) } else { None };
+
+        let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position));
+        let interact_rect = Rect::from_center_size(point_in_screen, emath::Vec2::splat(2.0 * knot_radius));
+        let interact_id = response.id.with(knot.id);
+        let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
+
+        if interact_response.dragged_by(egui::PointerButton::Primary) {
+          modified_knot = Some((i, Knot {
+            position: knot.position + self.canvas_to_curve_vec(interact_response.drag_delta()),
+            ..*knot
+          }));
+        }
+
+        interact_response.context_menu(|ui| {
+          ui.label("Interpolation");
+          if ui.radio(matches!(knot.interpolation, KnotInterpolation::Constant), "Constant").clicked() {
+            modified_knot = Some((i, Knot {
+              interpolation: KnotInterpolation::Constant,
+              ..*knot
+            }));
+            ui.close_menu();
+          }
+          if ui.radio(matches!(knot.interpolation, KnotInterpolation::Linear), "Linear").clicked() {
+            modified_knot = Some((i, Knot {
+              interpolation: KnotInterpolation::Linear,
+              ..*knot
+            }));
+            ui.close_menu();
+          }
+          if ui.radio(matches!(knot.interpolation, KnotInterpolation::Bezier), "Bezier").clicked() {
+            modified_knot = Some((i, Knot {
+              interpolation: KnotInterpolation::Bezier,
+              ..*knot
+            }));
+            ui.close_menu();
+          }
+          ui.label("Actions");
+          if ui.button("Delete knot").clicked() {
+            deleted_knot_index = Some(i);
+            ui.close_menu();
+          }
+        });
+
+        painter.add(Shape::circle_filled(
+          to_screen.transform_pos(self.curve_to_canvas(knot.position)),
+          3.0,
+          Color32::LIGHT_GREEN
+        ));
+
+        // right tangent
+        {
+          let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position + knot.right_tangent));
           let interact_rect = Rect::from_center_size(point_in_screen, emath::Vec2::splat(2.0 * knot_radius));
-          let interact_id = response.id.with(knot.id);
+          let interact_id = interact_id.with(0);
           let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
 
           if interact_response.dragged_by(egui::PointerButton::Primary) {
             modified_knot = Some((i, Knot {
-              position: knot.position + self.canvas_to_curve_vec(interact_response.drag_delta()),
+              right_tangent: knot.right_tangent + self.canvas_to_curve_vec(interact_response.drag_delta()),
               ..*knot
             }));
           }
 
-          interact_response.context_menu(|ui| {
-            ui.label("Interpolation");
-            if ui.radio(matches!(knot.interpolation, KnotInterpolation::Constant), "Constant").clicked() {
-              modified_knot = Some((i, Knot {
-                interpolation: KnotInterpolation::Constant,
-                ..*knot
-              }));
-              ui.close_menu();
-            }
-            if ui.radio(matches!(knot.interpolation, KnotInterpolation::Linear), "Linear").clicked() {
-              modified_knot = Some((i, Knot {
-                interpolation: KnotInterpolation::Linear,
-                ..*knot
-              }));
-              ui.close_menu();
-            }
-            if ui.radio(matches!(knot.interpolation, KnotInterpolation::Bezier), "Bezier").clicked() {
-              modified_knot = Some((i, Knot {
-                interpolation: KnotInterpolation::Bezier,
-                ..*knot
-              }));
-              ui.close_menu();
-            }
-            ui.label("Actions");
-            if ui.button("Delete knot").clicked() {
-              deleted_knot_index = Some(i);
-              ui.close_menu();
-            }
-          });
-
-          painter.add(Shape::circle_filled(
-            to_screen.transform_pos(self.curve_to_canvas(knot.position)),
-            3.0,
-            Color32::LIGHT_GREEN
-          ));
-
-          // right tangent
-          {
-            let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position + knot.right_tangent));
-            let interact_rect = Rect::from_center_size(point_in_screen, emath::Vec2::splat(2.0 * knot_radius));
-            let interact_id = interact_id.with(0);
-            let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
-
-            if interact_response.dragged_by(egui::PointerButton::Primary) {
-              modified_knot = Some((i, Knot {
-                right_tangent: knot.right_tangent + self.canvas_to_curve_vec(interact_response.drag_delta()),
-                ..*knot
-              }));
-            }
-
-            let corrected = knot.right_tangent_corrected(next_knot);
-            let corrected_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position + corrected));
-            if corrected != knot.right_tangent {
-              painter.add(Shape::dashed_line(&[to_screen.transform_pos(self.curve_to_canvas(knot.position)), corrected_in_screen], Stroke::new(1.0, Color32::GRAY), 4.0, 2.0));
-              painter.add(Shape::dashed_line(&[corrected_in_screen, point_in_screen], Stroke::new(1.0, Color32::RED), 4.0, 2.0));
-              painter.add(Shape::circle_filled(
-                corrected_in_screen,
-                2.0,
-                Color32::RED
-              ));
-            } else {
-              painter.add(Shape::dashed_line(&[to_screen.transform_pos(self.curve_to_canvas(knot.position)), corrected_in_screen], Stroke::new(1.0, Color32::GRAY), 4.0, 2.0));
-            }
-
+          let corrected = knot.right_tangent_corrected(next_knot);
+          let corrected_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position + corrected));
+          if corrected != knot.right_tangent {
+            painter.add(Shape::dashed_line(&[to_screen.transform_pos(self.curve_to_canvas(knot.position)), corrected_in_screen], Stroke::new(1.0, Color32::GRAY), 4.0, 2.0));
+            painter.add(Shape::dashed_line(&[corrected_in_screen, point_in_screen], Stroke::new(1.0, Color32::RED), 4.0, 2.0));
             painter.add(Shape::circle_filled(
-              point_in_screen,
-              3.0,
-              Color32::LIGHT_GRAY
+              corrected_in_screen,
+              2.0,
+              Color32::RED
             ));
+          } else {
+            painter.add(Shape::dashed_line(&[to_screen.transform_pos(self.curve_to_canvas(knot.position)), corrected_in_screen], Stroke::new(1.0, Color32::GRAY), 4.0, 2.0));
           }
 
-          // left tangent
-          {
-            let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position + knot.left_tangent));
-            let interact_rect = Rect::from_center_size(point_in_screen, emath::Vec2::splat(2.0 * knot_radius));
-            let interact_id = interact_id.with(1);
-            let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
-
-            if interact_response.dragged_by(egui::PointerButton::Primary) {
-              modified_knot = Some((i, Knot {
-                left_tangent: knot.left_tangent + self.canvas_to_curve_vec(interact_response.drag_delta()),
-                ..*knot
-              }));
-            }
-
-            let corrected = knot.left_tangent_corrected(prev_knot);
-            let corrected_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position + corrected));
-            if corrected != knot.left_tangent {
-              painter.add(Shape::dashed_line(&[to_screen.transform_pos(self.curve_to_canvas(knot.position)), corrected_in_screen], Stroke::new(1.0, Color32::GRAY), 4.0, 2.0));
-              painter.add(Shape::dashed_line(&[corrected_in_screen, point_in_screen], Stroke::new(1.0, Color32::RED), 4.0, 2.0));
-              painter.add(Shape::circle_filled(
-                corrected_in_screen,
-                2.0,
-                Color32::RED
-              ));
-            } else {
-              painter.add(Shape::dashed_line(&[to_screen.transform_pos(self.curve_to_canvas(knot.position)), corrected_in_screen], Stroke::new(1.0, Color32::GRAY), 4.0, 2.0));
-            }
-
-            painter.add(Shape::circle_filled(
-              point_in_screen,
-              3.0,
-              Color32::LIGHT_GRAY
-            ));
-          }
-        }
-
-        // Apply modifications
-        if let Some((i, knot)) = modified_knot {
-          curve.modify_knot(i, &knot);
-        }
-        if let Some(i) = deleted_knot_index {
-          curve.delete_knot(i);
-        }
-
-        // Sample to visualize and test find_y_given_x
-        if let Some(sample) = sample {
           painter.add(Shape::circle_filled(
-            to_screen.transform_pos(self.curve_to_canvas(Vec2::new(sample, curve.find_y_given_x(sample)))),
+            point_in_screen,
             3.0,
-            Color32::RED
+            Color32::LIGHT_GRAY
           ));
         }
+
+        // left tangent
+        {
+          let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position + knot.left_tangent));
+          let interact_rect = Rect::from_center_size(point_in_screen, emath::Vec2::splat(2.0 * knot_radius));
+          let interact_id = interact_id.with(1);
+          let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
+
+          if interact_response.dragged_by(egui::PointerButton::Primary) {
+            modified_knot = Some((i, Knot {
+              left_tangent: knot.left_tangent + self.canvas_to_curve_vec(interact_response.drag_delta()),
+              ..*knot
+            }));
+          }
+
+          let corrected = knot.left_tangent_corrected(prev_knot);
+          let corrected_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position + corrected));
+          if corrected != knot.left_tangent {
+            painter.add(Shape::dashed_line(&[to_screen.transform_pos(self.curve_to_canvas(knot.position)), corrected_in_screen], Stroke::new(1.0, Color32::GRAY), 4.0, 2.0));
+            painter.add(Shape::dashed_line(&[corrected_in_screen, point_in_screen], Stroke::new(1.0, Color32::RED), 4.0, 2.0));
+            painter.add(Shape::circle_filled(
+              corrected_in_screen,
+              2.0,
+              Color32::RED
+            ));
+          } else {
+            painter.add(Shape::dashed_line(&[to_screen.transform_pos(self.curve_to_canvas(knot.position)), corrected_in_screen], Stroke::new(1.0, Color32::GRAY), 4.0, 2.0));
+          }
+
+          painter.add(Shape::circle_filled(
+            point_in_screen,
+            3.0,
+            Color32::LIGHT_GRAY
+          ));
+        }
+      }
+
+      // Apply modifications
+      if let Some((i, knot)) = modified_knot {
+        curve.modify_knot(i, &knot);
+      }
+      if let Some(i) = deleted_knot_index {
+        curve.delete_knot(i);
+      }
+
+      // Sample to visualize and test find_y_given_x
+      if let Some(sample) = sample {
+        painter.add(Shape::circle_filled(
+          to_screen.transform_pos(self.curve_to_canvas(Vec2::new(sample, curve.find_y_given_x(sample)))),
+          3.0,
+          Color32::RED
+        ));
       }
 
     });
