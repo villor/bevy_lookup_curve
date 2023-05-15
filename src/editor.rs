@@ -309,9 +309,17 @@ impl LookupCurveEditor {
           ],
           stroke: Stroke {
             width: 1.0,
-            color: Color32::DARK_GRAY,
+            color: Color32::from_rgb(42, 42, 42),
           },
         });
+
+        painter.text(
+          to_screen.transform_pos(Pos2::new(self.curve_to_canvas(line_from).x, self.editor_size.y - 5.)),
+          egui::Align2::CENTER_BOTTOM,
+          format!("{:.1}", line_from.x),
+          egui::FontId::default(),
+          Color32::WHITE
+        );
       }
     }
 
@@ -332,9 +340,20 @@ impl LookupCurveEditor {
           ],
           stroke: Stroke {
             width: 1.0,
-            color: Color32::DARK_GRAY,
+            color: Color32::from_rgb(42, 42, 42),
           },
         });
+
+        let text_canvas_pos = Pos2::new(5., self.curve_to_canvas(line_from).y);
+        if text_canvas_pos.y < self.editor_size.y - 30. {
+          painter.text(
+            to_screen.transform_pos(text_canvas_pos),
+            egui::Align2::LEFT_CENTER,
+            format!("{:.1}", line_from.y),
+            egui::FontId::default(),
+            Color32::WHITE
+          );
+        }
       }
     }
 
