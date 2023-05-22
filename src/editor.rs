@@ -187,6 +187,37 @@ impl LookupCurveEditor {
             }));
             ui.close_menu();
           }
+
+          ui.label("Position");
+          ui.horizontal(|ui| {
+            ui.label("x:");
+            ui.add(egui::DragValue::from_get_set(|v|
+              match v {
+                Some(v) => {
+                  modified_knot = Some((i, Knot {
+                    position: Vec2::new(v as f32, knot.position.y),
+                    ..*knot
+                  }));
+                  v
+                },
+                _ => knot.position.x as f64,
+              }
+            ).speed(0.001));
+            ui.label("y:");
+            ui.add(egui::DragValue::from_get_set(|v|
+              match v {
+                Some(v) => {
+                  modified_knot = Some((i, Knot {
+                    position: Vec2::new(knot.position.x, v as f32),
+                    ..*knot
+                  }));
+                  v
+                },
+                _ => knot.position.y as f64,
+              }
+            ).speed(0.001));
+          });
+          
           ui.label("Actions");
           if ui.button("Delete knot").clicked() {
             deleted_knot_index = Some(i);
