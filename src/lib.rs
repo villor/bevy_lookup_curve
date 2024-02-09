@@ -5,6 +5,42 @@ use bevy_reflect::{Reflect, FromReflect, TypeUuid};
 
 pub mod editor;
 
+/// How a tangent behaves when a knot or its tangents are moved
+#[derive(Reflect, FromReflect, Copy, Clone, Debug)]
+pub enum TangentMode {
+  Free,
+  Aligned
+}
+
+#[derive(Reflect, FromReflect, Copy, Clone, Debug)]
+pub struct Tangent {
+  pub position: Vec2,
+  pub mode: TangentMode,
+}
+
+impl Tangent {
+  fn default_left() -> Self {
+    Self {
+      position: Vec2::new(-0.1, 0.0),
+      mode: TangentMode::Aligned
+    }
+  }
+
+  fn default_right() -> Self {
+    Self {
+      position: Vec2::new(0.1, 0.0),
+      mode: TangentMode::Aligned
+    }
+  }
+
+  pub(crate) fn with_position(&self, position: Vec2) -> Self {
+    Self {
+      position,
+      mode: self.mode
+    }
+  }
+}
+
 #[derive(Reflect, FromReflect, Copy, Clone, Debug)]
 pub enum KnotInterpolation {
   Constant,
@@ -24,9 +60,9 @@ pub struct Knot {
   pub id: usize,
   
   /// Left tangent relative to knot position. x above 0 will be clamped to 0
-  pub left_tangent: Vec2,
+  pub left_tangent: Tangent,
   /// Right tangent relative to knot position. x below 0 will be clamped to 0
-  pub right_tangent: Vec2,
+  pub right_tangent: Tangent,
 }
 
 impl Knot {
@@ -35,35 +71,37 @@ impl Knot {
   /// Returns the left tangent of this knot, corrected between the previous knot and this one.
   /// Ensures the curve does not ever go backwards.
   fn left_tangent_corrected(&self, prev_knot: Option<&Knot>) -> Vec2 {
-    if self.left_tangent.x >= 0.0 {
-      return Vec2::new(0.0, self.left_tangent.y);
+    let left_tangent = self.left_tangent.position;
+    if left_tangent.x >= 0.0 {
+      return Vec2::new(0.0, left_tangent.y);
     }
 
     if let Some(prev_knot) = prev_knot {
       let min_x = prev_knot.position.x - self.position.x;
-      if self.left_tangent.x < min_x {
-        return Vec2::new(min_x, self.left_tangent.y * (min_x / self.left_tangent.x));
+      if left_tangent.x < min_x {
+        return Vec2::new(min_x, left_tangent.y * (min_x / left_tangent.x));
       }
     }
 
-    self.left_tangent
+    left_tangent
   }
 
   /// Returns the right tangent of this knot, corrected between the next knot and this one.
   /// Ensures the curve does not ever go backwards.
   fn right_tangent_corrected(&self, next_knot: Option<&Knot>) -> Vec2 {
-    if self.right_tangent.x <= 0.0 {
-      return Vec2::new(0.0, self.right_tangent.y);
+    let right_tangent = self.right_tangent.position;
+    if right_tangent.x <= 0.0 {
+      return Vec2::new(0.0, right_tangent.y);
     }
 
     if let Some(next_knot) = next_knot {
       let max_x = next_knot.position.x - self.position.x;
-      if self.right_tangent.x > max_x {
-        return Vec2::new(max_x, self.right_tangent.y * (max_x / self.right_tangent.x));
+      if right_tangent.x > max_x {
+        return Vec2::new(max_x, right_tangent.y * (max_x / right_tangent.x));
       }
     }
 
-    self.right_tangent
+    right_tangent
   }
 }
 
@@ -75,8 +113,8 @@ impl Default for Knot {
       position: Vec2::ZERO,
       interpolation: KnotInterpolation::Linear,
       id: KNOT_ID_COUNTER.fetch_add(1, Ordering::Relaxed),
-      right_tangent: Vec2::new(0.1, 0.0),
-      left_tangent: Vec2::new(-0.1, 0.0),
+      right_tangent: Tangent::default_right(),
+      left_tangent: Tangent::default_left(),
     }
   }
 }
@@ -105,6 +143,20 @@ impl LookupCurve {
     self.knots.as_slice()
   }
 
+  #[inline]
+  pub fn prev_knot(&self, i: usize) -> Option<&Knot> {
+    if i > 0 {
+      Some(&self.knots[i - 1])
+    } else { None }
+  }
+
+  #[inline]
+  pub fn next_knot(&self, i: usize) -> Option<&Knot> {
+    if i < self.knots.len() - 1 {
+      Some(&self.knots[i + 1])
+    } else { None }
+  }
+
   /// Adds a knot. Returns the index of the added knot.
   fn add_knot(&mut self, knot: Knot) -> usize {
     if self.knots.is_empty() || knot.position.x > self.knots.last().unwrap().position.x {
@@ -118,11 +170,14 @@ impl LookupCurve {
   }
 
   /// Modifies an existing knot in the lookup curve. Returns the new (possibly unchanged) index of the knot.
-  fn modify_knot(&mut self, i: usize, new_value: &Knot) -> usize {
+  fn modify_knot(&mut self, i: usize, new_value: Knot) -> usize {
     let old_value = self.knots[i];
-    if old_value.position == new_value.position {
-      // The knot has not been moved, simply overwrite it
-      self.knots[i] = *new_value;
+
+    // TODO: Implement tangent modes
+
+    if old_value.position.x == new_value.position.x {
+      // The knot has not been moved on the x axis, simply overwrite it
+      self.knots[i] = new_value;
       return i;
     }
 
@@ -130,14 +185,14 @@ impl LookupCurve {
     let new_i = self.knots.partition_point(|knot| knot.position.x < new_value.position.x);
     if new_i == i {
       // knot stays in the same spot even though position was changed, overwrite it
-      self.knots[i] = *new_value;
+      self.knots[i] = new_value;
       return i;
     }
 
     self.knots.remove(i);
 
     let insert_i = if i < new_i { new_i - 1 } else { new_i };
-    self.knots.insert(insert_i, *new_value);
+    self.knots.insert(insert_i, new_value);
 
     insert_i
   }

@@ -149,8 +149,8 @@ impl LookupCurveEditor {
       let mut modified_knot = None;
       let mut deleted_knot_index = None;
       for (i, knot) in curve.knots().iter().enumerate() {
-        let prev_knot = if i > 0 { Some(&curve.knots()[i - 1]) } else { None };
-        let next_knot = if i < curve.knots().len() - 1 { Some(&curve.knots()[i + 1]) } else { None };
+        let prev_knot = curve.prev_knot(i);
+        let next_knot = curve.next_knot(i);
 
         let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position));
         let interact_rect = Rect::from_center_size(point_in_screen, emath::Vec2::splat(2.0 * knot_radius));
@@ -232,22 +232,22 @@ impl LookupCurveEditor {
         ));
 
         // right tangent
-        {
-          let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position + knot.right_tangent));
+        if matches!(knot.interpolation, KnotInterpolation::Bezier) {
+          let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position + knot.right_tangent.position));
           let interact_rect = Rect::from_center_size(point_in_screen, emath::Vec2::splat(2.0 * knot_radius));
           let interact_id = interact_id.with(0);
           let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
 
           if interact_response.dragged_by(egui::PointerButton::Primary) {
             modified_knot = Some((i, Knot {
-              right_tangent: knot.right_tangent + self.canvas_to_curve_vec(interact_response.drag_delta()),
+              right_tangent: knot.right_tangent.with_position(knot.right_tangent.position + self.canvas_to_curve_vec(interact_response.drag_delta())),
               ..*knot
             }));
           }
 
           let corrected = knot.right_tangent_corrected(next_knot);
           let corrected_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position + corrected));
-          if corrected != knot.right_tangent {
+          if corrected != knot.right_tangent.position {
             painter.add(Shape::dashed_line(&[to_screen.transform_pos(self.curve_to_canvas(knot.position)), corrected_in_screen], Stroke::new(1.0, Color32::GRAY), 4.0, 2.0));
             painter.add(Shape::dashed_line(&[corrected_in_screen, point_in_screen], Stroke::new(1.0, Color32::RED), 4.0, 2.0));
             painter.add(Shape::circle_filled(
@@ -267,22 +267,22 @@ impl LookupCurveEditor {
         }
 
         // left tangent
-        {
-          let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position + knot.left_tangent));
+        if prev_knot.is_some() && matches!(prev_knot.unwrap().interpolation, KnotInterpolation::Bezier){
+          let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position + knot.left_tangent.position));
           let interact_rect = Rect::from_center_size(point_in_screen, emath::Vec2::splat(2.0 * knot_radius));
           let interact_id = interact_id.with(1);
           let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
 
           if interact_response.dragged_by(egui::PointerButton::Primary) {
             modified_knot = Some((i, Knot {
-              left_tangent: knot.left_tangent + self.canvas_to_curve_vec(interact_response.drag_delta()),
+              left_tangent: knot.left_tangent.with_position(knot.left_tangent.position + self.canvas_to_curve_vec(interact_response.drag_delta())),
               ..*knot
             }));
           }
 
           let corrected = knot.left_tangent_corrected(prev_knot);
           let corrected_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position + corrected));
-          if corrected != knot.left_tangent {
+          if corrected != knot.left_tangent.position {
             painter.add(Shape::dashed_line(&[to_screen.transform_pos(self.curve_to_canvas(knot.position)), corrected_in_screen], Stroke::new(1.0, Color32::GRAY), 4.0, 2.0));
             painter.add(Shape::dashed_line(&[corrected_in_screen, point_in_screen], Stroke::new(1.0, Color32::RED), 4.0, 2.0));
             painter.add(Shape::circle_filled(
@@ -304,7 +304,7 @@ impl LookupCurveEditor {
 
       // Apply modifications
       if let Some((i, knot)) = modified_knot {
-        curve.modify_knot(i, &knot);
+        curve.modify_knot(i, knot);
       }
       if let Some(i) = deleted_knot_index {
         curve.delete_knot(i);
