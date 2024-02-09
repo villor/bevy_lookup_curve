@@ -1,18 +1,18 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use bevy_math::Vec2;
-use bevy_reflect::{Reflect, FromReflect, TypeUuid};
+use bevy_reflect::Reflect;
 
 pub mod editor;
 
 /// How a tangent behaves when a knot or its tangents are moved
-#[derive(Reflect, FromReflect, Copy, Clone, Debug)]
+#[derive(Reflect, Copy, Clone, Debug)]
 pub enum TangentMode {
   Free,
   Aligned
 }
 
-#[derive(Reflect, FromReflect, Copy, Clone, Debug)]
+#[derive(Reflect, Copy, Clone, Debug)]
 pub struct Tangent {
   pub position: Vec2,
   pub mode: TangentMode,
@@ -41,14 +41,14 @@ impl Tangent {
   }
 }
 
-#[derive(Reflect, FromReflect, Copy, Clone, Debug)]
+#[derive(Reflect, Copy, Clone, Debug)]
 pub enum KnotInterpolation {
   Constant,
   Linear,
   Bezier,
 }
 
-#[derive(Reflect, FromReflect, Copy, Clone, Debug)]
+#[derive(Reflect, Copy, Clone, Debug)]
 pub struct Knot {
   /// The position of this knot in curve space
   pub position: Vec2,
@@ -120,8 +120,7 @@ impl Default for Knot {
 }
 
 /// Two-dimensional spline that only allows a single y-value per x-value
-#[derive(Debug, TypeUuid, Reflect, FromReflect)]
-#[uuid = "3219b5f0-fff6-42fd-9fc8-fd98ff8dae35"]
+#[derive(Debug, Reflect)]
 pub struct LookupCurve {
   knots: Vec<Knot>,
 }

@@ -1,10 +1,10 @@
-use bevy_reflect::{Reflect, FromReflect};
+use bevy_reflect::Reflect;
 use bevy_math::Vec2;
 use egui::{Pos2, Ui, emath, Frame, Shape, Color32, Rect, Painter, Stroke, Sense , epaint::CubicBezierShape};
 
 use crate::{LookupCurve, Knot, KnotInterpolation};
 
-#[derive(Reflect, FromReflect)]
+#[derive(Reflect)]
 pub struct LookupCurveEditor {
   //pub curve: Option<Handle<LookupCurve>>,
   pub offset: Vec2,

@@ -13,21 +13,23 @@ fn main() {
   App::new()
     .add_plugins(DefaultPlugins)
 
-    .add_asset::<LookupCurve>()
-    .add_plugin(AssetInspectorPlugin::<LookupCurve>::default())
+    .init_asset::<LookupCurveAsset>()
+    .add_plugins(AssetInspectorPlugin::<LookupCurveAsset>::default())
 
     .register_type::<LookupCurveEditorResource>()
-    .add_plugin(ResourceInspectorPlugin::<LookupCurveEditorResource>::default())
+    .add_plugins(ResourceInspectorPlugin::<LookupCurveEditorResource>::default())
     
-    .add_startup_system(setup)
-    .add_system(editor_window)
+    .add_systems(Startup, setup)
+    .add_systems(Update, editor_window)
     .run();
 }
 
-#[derive(Resource, Reflect, Default)]
-#[reflect(Resource)]
+#[derive(Asset, Reflect)]
+struct LookupCurveAsset(LookupCurve);
+
+#[derive(Resource, Default, Reflect)]
 struct LookupCurveEditorResource {
-  curve_handle: Handle<LookupCurve>,
+  curve_handle: Handle<LookupCurveAsset>,
   editor: LookupCurveEditor,
   sample: f32,
   sample_dir: f32,
@@ -36,13 +38,13 @@ struct LookupCurveEditorResource {
 
 fn setup(
   mut commands: Commands,
-  mut lookup_curves: ResMut<Assets<LookupCurve>>,
+  mut lookup_curves: ResMut<Assets<LookupCurveAsset>>,
 ) {
-  let handle = lookup_curves.add(LookupCurve::new(vec![
+  let handle = lookup_curves.add(LookupCurveAsset(LookupCurve::new(vec![
     Knot { position: Vec2::ZERO, interpolation: KnotInterpolation::Constant, ..default() },
     Knot { position: Vec2::new(0.2, 0.4), interpolation: KnotInterpolation::Linear, ..default() },
     Knot { position: Vec2::ONE, interpolation: KnotInterpolation::Linear, ..default() }
-  ]));
+  ])));
 
   commands.insert_resource(LookupCurveEditorResource {
     curve_handle: handle,
@@ -56,7 +58,7 @@ fn setup(
 fn editor_window(
   mut editor: ResMut<LookupCurveEditorResource>,
   mut contexts: EguiContexts,
-  mut curves: ResMut<Assets<LookupCurve>>,
+  mut curves: ResMut<Assets<LookupCurveAsset>>,
   time: Res<Time>,
 ) {
   
@@ -73,7 +75,7 @@ fn editor_window(
     egui::Window::new("Lookup curve")
       .show(contexts.ctx_mut(), |ui| {
         let sample = editor.sample;
-        editor.editor.ui(ui, curve, Some(sample));
+        editor.editor.ui(ui, &mut curve.0, Some(sample));
       });
   }
 }
