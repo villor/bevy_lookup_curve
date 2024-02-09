@@ -5,10 +5,15 @@ edition = "2021"
 
 [dependencies]
 # core
+bevy_app = "0.12"
 bevy_math = "0.12"
 bevy_reflect = "0.12"
 bevy_asset = "0.12"
 bevy_log = "0.12"
+bevy_utils = "0.12"
+ron = "0.8"
+thiserror = "1.0"
+serde = "1.0"
 
 # egui editor
 egui = "0.24"

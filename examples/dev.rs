@@ -4,17 +4,18 @@ use bevy_inspector_egui::quick::{ResourceInspectorPlugin, AssetInspectorPlugin};
 
 use bevy_lookup_curve::{
   LookupCurve,
-  Knot,
-  KnotInterpolation,
+  // Knot,
+  // KnotInterpolation,
+  LookupCurvePlugin,
   editor::LookupCurveEditor,
 };
 
 fn main() {
   App::new()
     .add_plugins(DefaultPlugins)
+    .add_plugins(LookupCurvePlugin)
 
-    .init_asset::<LookupCurveAsset>()
-    .add_plugins(AssetInspectorPlugin::<LookupCurveAsset>::default())
+    .add_plugins(AssetInspectorPlugin::<LookupCurve>::default())
 
     .register_type::<LookupCurveEditorResource>()
     .add_plugins(ResourceInspectorPlugin::<LookupCurveEditorResource>::default())
@@ -24,12 +25,9 @@ fn main() {
     .run();
 }
 
-#[derive(Asset, Reflect)]
-struct LookupCurveAsset(LookupCurve);
-
 #[derive(Resource, Default, Reflect)]
 struct LookupCurveEditorResource {
-  curve_handle: Handle<LookupCurveAsset>,
+  curve_handle: Handle<LookupCurve>,
   editor: LookupCurveEditor,
   sample: f32,
   sample_dir: f32,
@@ -38,17 +36,19 @@ struct LookupCurveEditorResource {
 
 fn setup(
   mut commands: Commands,
-  mut lookup_curves: ResMut<Assets<LookupCurveAsset>>,
+  //mut lookup_curves: ResMut<Assets<LookupCurve>>,
+  assets: Res<AssetServer>,
 ) {
-  let handle = lookup_curves.add(LookupCurveAsset(LookupCurve::new(vec![
-    Knot { position: Vec2::ZERO, interpolation: KnotInterpolation::Constant, ..default() },
-    Knot { position: Vec2::new(0.2, 0.4), interpolation: KnotInterpolation::Linear, ..default() },
-    Knot { position: Vec2::ONE, interpolation: KnotInterpolation::Linear, ..default() }
-  ])));
+  // let handle = lookup_curves.add(LookupCurve(LookupCurve::new(vec![
+  //   Knot { position: Vec2::ZERO, interpolation: KnotInterpolation::Constant, ..default() },
+  //   Knot { position: Vec2::new(0.2, 0.4), interpolation: KnotInterpolation::Linear, ..default() },
+  //   Knot { position: Vec2::ONE, interpolation: KnotInterpolation::Linear, ..default() }
+  // ])));
+  let handle = assets.load("example.curve.ron");
 
   commands.insert_resource(LookupCurveEditorResource {
     curve_handle: handle,
-    editor: LookupCurveEditor::default(),
+    editor: LookupCurveEditor::with_save_path("./assets/example.curve.ron".to_string()),
     sample: 0.0,
     sample_dir: 1.0,
     move_sample: true,
@@ -58,7 +58,7 @@ fn setup(
 fn editor_window(
   mut editor: ResMut<LookupCurveEditorResource>,
   mut contexts: EguiContexts,
-  mut curves: ResMut<Assets<LookupCurveAsset>>,
+  mut curves: ResMut<Assets<LookupCurve>>,
   time: Res<Time>,
 ) {
   
@@ -75,7 +75,7 @@ fn editor_window(
     egui::Window::new("Lookup curve")
       .show(contexts.ctx_mut(), |ui| {
         let sample = editor.sample;
-        editor.editor.ui(ui, &mut curve.0, Some(sample));
+        editor.editor.ui(ui, curve, Some(sample));
       });
   }
 }

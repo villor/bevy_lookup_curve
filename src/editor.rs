@@ -2,7 +2,7 @@ use bevy_reflect::Reflect;
 use bevy_math::Vec2;
 use egui::{Pos2, Ui, emath, Frame, Shape, Color32, Rect, Painter, Stroke, Sense , epaint::CubicBezierShape};
 
-use crate::{LookupCurve, Knot, KnotInterpolation};
+use crate::{LookupCurve, Knot, KnotInterpolation, asset::save_lookup_curve};
 
 #[derive(Reflect)]
 pub struct LookupCurveEditor {
@@ -15,6 +15,8 @@ pub struct LookupCurveEditor {
 
   pub editor_size: Vec2,
   pub hover_point: Vec2,
+
+  pub ron_path: Option<String>,
 }
 
 impl Default for LookupCurveEditor {
@@ -29,12 +31,20 @@ impl Default for LookupCurveEditor {
 
       editor_size: Vec2::ZERO,
       hover_point: Vec2::ZERO,
+
+      ron_path: None,
     }
   }
 }
 
 impl LookupCurveEditor {
 
+  pub fn with_save_path(path: String) -> Self {
+    Self {
+      ron_path: Some(path),
+      ..Default::default()
+    }
+  }
 
   // TODO : Rename these functions and make them clearer
   // Move to a paintcontext? with access to to_screeen / to_canvas
@@ -55,6 +65,14 @@ impl LookupCurveEditor {
 
   pub fn ui(&mut self, ui: &mut Ui, curve: &mut LookupCurve, sample: Option<f32>) {
     ui.label(format!("x = {}, y = {}", self.hover_point.x, self.hover_point.y));
+
+    if self.ron_path.is_some() && ui.button("Save").clicked() {
+      if let Err(e) = save_lookup_curve(self.ron_path.as_ref().unwrap().as_str(), curve) {
+        bevy_log::error!("Failed to save curve {}", e);
+      } else {
+        bevy_log::info!("Curve saved successfully.");
+      }
+    }
 
     Frame::canvas(ui.style()).show(ui, |ui| {
       let (mut response, painter) =
