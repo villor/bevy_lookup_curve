@@ -45,11 +45,11 @@ fn setup(
       ..default()
     },
     AnimateX {
-      from: -300.0,
-      to: 300.0,
+      from: -400.0,
+      to: 400.0,
       t: 0.0,
       dir: 1.0,
-      speed: 0.5,
+      speed: 0.3,
     },
     AnimateWithCurve(LookupCurve::new(vec![
       Knot { position: Vec2::ZERO, interpolation: KnotInterpolation::Linear, ..default() },
