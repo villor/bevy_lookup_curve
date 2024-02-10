@@ -7,9 +7,12 @@ edition = "2021"
 # core
 bevy_app = "0.12"
 bevy_math = "0.12"
+bevy_ecs = "0.12"
 bevy_reflect = { version = "0.12", features = ['bevy'] }
-bevy_asset = "0.12"
 bevy_log = "0.12"
+
+# asset
+bevy_asset = "0.12"
 bevy_utils = "0.12"
 ron = "0.8"
 thiserror = "1.0"
@@ -17,6 +20,7 @@ serde = "1.0"
 
 # egui editor
 egui = "0.24"
+bevy_egui = "0.24"
 
 # egui inspector
 # bevy_app = "0.10"
@@ -24,5 +28,4 @@ egui = "0.24"
 
 [dev-dependencies]
 bevy = { version = "0.12.1", default-features = false, features = ["x11", "bevy_winit", "bevy_sprite", "bevy_core_pipeline", "bevy_render", "bevy_asset", "png", "multi-threaded"] }
-bevy_egui = "0.24"
 bevy-inspector-egui = { version = "0.22.1", default-features = false }

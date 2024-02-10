@@ -15,6 +15,7 @@ impl Plugin for LookupCurvePlugin {
   fn build(&self, app: &mut App) {
     app.init_asset::<LookupCurve>();
     app.register_asset_loader(asset::LookupCurveAssetLoader);
+    app.add_plugins(editor::EditorPlugin);
   }
 }
 

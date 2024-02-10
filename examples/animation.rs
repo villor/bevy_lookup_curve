@@ -5,7 +5,7 @@ use bevy_lookup_curve::{
   LookupCurve,
   Knot,
   KnotInterpolation,
-  editor::LookupCurveEditor,
+  editor::LookupCurveEguiEditor,
 };
 
 fn main() {
@@ -31,7 +31,7 @@ struct AnimateX {
 struct AnimateWithCurve(LookupCurve);
 
 #[derive(Component)]
-struct EditorWindow(LookupCurveEditor);
+struct EditorWindow(LookupCurveEguiEditor);
 
 fn setup(
   mut commands: Commands,
@@ -55,7 +55,7 @@ fn setup(
       Knot { position: Vec2::ZERO, interpolation: KnotInterpolation::Linear, ..default() },
       Knot { position: Vec2::ONE, interpolation: KnotInterpolation::Linear, ..default() }
     ])),
-    EditorWindow(LookupCurveEditor::default()),
+    EditorWindow(LookupCurveEguiEditor::default()),
   ));
 }
 

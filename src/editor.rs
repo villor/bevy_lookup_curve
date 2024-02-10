@@ -1,11 +1,71 @@
+use bevy_app::{App, Plugin, Update};
+use bevy_asset::{Assets, Handle};
+use bevy_ecs::prelude::{Component, Query, ResMut};
+use bevy_egui::{EguiContexts, EguiPlugin};
 use bevy_reflect::Reflect;
 use bevy_math::Vec2;
 use egui::{Pos2, Ui, emath, Frame, Shape, Color32, Rect, Painter, Stroke, Sense , epaint::CubicBezierShape};
 
 use crate::{LookupCurve, Knot, KnotInterpolation, asset::save_lookup_curve};
 
-#[derive(Reflect)]
+pub(crate) struct EditorPlugin;
+
+impl Plugin for EditorPlugin {
+  fn build(&self, app: &mut App) {
+    if !app.is_plugin_added::<EguiPlugin>() {
+      app.add_plugins(EguiPlugin);
+    }
+    app.add_systems(Update, lookup_curve_editor_ui);
+  }
+}
+
+#[derive(Component, Reflect)]
 pub struct LookupCurveEditor {
+  pub title: String,
+  pub curve_handle: Handle<LookupCurve>,
+  pub egui_editor: LookupCurveEguiEditor,
+  pub sample: Option<f32>,
+}
+
+impl LookupCurveEditor {
+  pub fn new(curve_handle: Handle<LookupCurve>) -> Self {
+    Self {
+      title: "Lookup curve".to_string(),
+      curve_handle,
+      egui_editor: LookupCurveEguiEditor::default(),
+      sample: None,
+    }
+  }
+
+  pub fn with_save_path(curve_handle: Handle<LookupCurve>, path: String) -> Self {
+    Self {
+      egui_editor: LookupCurveEguiEditor {
+        ron_path: Some(path),
+        ..Default::default()
+      },
+      ..LookupCurveEditor::new(curve_handle)
+    }
+  }
+}
+
+fn lookup_curve_editor_ui(
+  mut editors: Query<&mut LookupCurveEditor>,
+  mut contexts: EguiContexts,
+  mut curves: ResMut<Assets<LookupCurve>>,
+) {
+  for mut editor in &mut editors {
+    if let Some(curve) = curves.get_mut(&editor.curve_handle) {
+      egui::Window::new(editor.title.clone())
+        .show(contexts.ctx_mut(), |ui| {
+          let sample = editor.sample;
+          editor.egui_editor.ui(ui, curve, sample);
+        });
+    }
+  }
+}
+
+#[derive(Reflect)]
+pub struct LookupCurveEguiEditor {
   //pub curve: Option<Handle<LookupCurve>>,
   pub offset: Vec2,
   pub scale: Vec2,
@@ -19,7 +79,7 @@ pub struct LookupCurveEditor {
   pub ron_path: Option<String>,
 }
 
-impl Default for LookupCurveEditor {
+impl Default for LookupCurveEguiEditor {
   fn default() -> Self {
     Self {
       //curve: None,
@@ -37,7 +97,7 @@ impl Default for LookupCurveEditor {
   }
 }
 
-impl LookupCurveEditor {
+impl LookupCurveEguiEditor {
 
   pub fn with_save_path(path: String) -> Self {
     Self {
