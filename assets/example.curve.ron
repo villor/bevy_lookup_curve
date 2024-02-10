@@ -3,7 +3,6 @@
     (
       position: (0.0, 0.0),
       interpolation: Constant,
-      id: 1,
       left_tangent: (
         position: (-0.1, 0.0),
         mode: Aligned,
@@ -16,7 +15,6 @@
     (
       position: (0.2, 0.4),
       interpolation: Linear,
-      id: 2,
       left_tangent: (
         position: (-0.1, 0.0),
         mode: Aligned,
@@ -29,7 +27,6 @@
     (
       position: (0.42947105, 0.601108),
       interpolation: Bezier,
-      id: 5,
       left_tangent: (
         position: (-0.1, 0.0),
         mode: Aligned,
@@ -42,7 +39,6 @@
     (
       position: (0.9626524, 0.5307082),
       interpolation: Linear,
-      id: 4,
       left_tangent: (
         position: (-0.06725441, -0.13538468),
         mode: Aligned,
@@ -55,7 +51,6 @@
     (
       position: (1.0, 1.0),
       interpolation: Linear,
-      id: 3,
       left_tangent: (
         position: (-0.1, 0.0),
         mode: Aligned,

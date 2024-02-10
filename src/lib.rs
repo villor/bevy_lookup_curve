@@ -68,14 +68,20 @@ pub struct Knot {
 
   /// Interpolation used between this and the next knot
   pub interpolation: KnotInterpolation,
-
-  /// Identifier used by editor operations because index might change during modification
-  pub id: usize,
   
   /// Left tangent relative to knot position. x above 0 will be clamped to 0
   pub left_tangent: Tangent,
   /// Right tangent relative to knot position. x below 0 will be clamped to 0
   pub right_tangent: Tangent,
+
+  /// Identifier used by editor operations because index might change during modification
+  #[serde(skip_serializing, default = "unique_knot_id")]
+  pub id: usize,
+}
+
+fn unique_knot_id() -> usize {
+  static KNOT_ID_COUNTER: AtomicUsize = AtomicUsize::new(1);
+  KNOT_ID_COUNTER.fetch_add(1, Ordering::Relaxed)
 }
 
 impl Knot {
@@ -118,14 +124,12 @@ impl Knot {
   }
 }
 
-static KNOT_ID_COUNTER: AtomicUsize = AtomicUsize::new(1);
-
 impl Default for Knot {
   fn default() -> Self {
     Self {
       position: Vec2::ZERO,
       interpolation: KnotInterpolation::Linear,
-      id: KNOT_ID_COUNTER.fetch_add(1, Ordering::Relaxed),
+      id: unique_knot_id(),
       right_tangent: Tangent::default_right(),
       left_tangent: Tangent::default_left(),
     }
