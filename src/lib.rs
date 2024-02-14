@@ -46,13 +46,6 @@ impl Tangent {
       mode: TangentMode::Aligned
     }
   }
-
-  pub(crate) fn with_position(&self, position: Vec2) -> Self {
-    Self {
-      position,
-      mode: self.mode
-    }
-  }
 }
 
 #[derive(Reflect, Copy, Clone, Debug, Serialize, Deserialize)]
@@ -123,6 +116,30 @@ impl Knot {
 
     right_tangent
   }
+
+  /// Returns a new knot with the right tangent moved to `position`. This might also affect the left tangent depending on [`TangentMode`].
+  fn with_right_tangent_position(&self, position: Vec2) -> Self {
+    let mut knot = *self;
+    knot.right_tangent.position = position;
+
+    if matches!((self.left_tangent.mode, self.right_tangent.mode), (TangentMode::Aligned, TangentMode::Aligned)) {
+      knot.left_tangent.position = -position.normalize_or_zero() * knot.left_tangent.position.length();
+    }
+
+    knot
+  }
+
+  /// Returns a new knot with the left tangent moved to `position`. This might also affect the right tangent depending on [`TangentMode`].
+  fn with_left_tangent_position(&self, position: Vec2) -> Self {
+    let mut knot = *self;
+    knot.left_tangent.position = position;
+
+    if matches!((self.left_tangent.mode, self.right_tangent.mode), (TangentMode::Aligned, TangentMode::Aligned)) {
+      knot.right_tangent.position = -position.normalize_or_zero() * knot.right_tangent.position.length();
+    }
+
+    knot
+  }
 }
 
 impl Default for Knot {
@@ -189,8 +206,6 @@ impl LookupCurve {
   /// Modifies an existing knot in the lookup curve. Returns the new (possibly unchanged) index of the knot.
   fn modify_knot(&mut self, i: usize, new_value: Knot) -> usize {
     let old_value = self.knots[i];
-
-    // TODO: Implement tangent modes
 
     if old_value.position.x == new_value.position.x {
       // The knot has not been moved on the x axis, simply overwrite it

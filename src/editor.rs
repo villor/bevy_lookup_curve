@@ -317,10 +317,7 @@ impl LookupCurveEguiEditor {
           let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
 
           if interact_response.dragged_by(egui::PointerButton::Primary) {
-            modified_knot = Some((i, Knot {
-              right_tangent: knot.right_tangent.with_position(knot.right_tangent.position + self.canvas_to_curve_vec(interact_response.drag_delta())),
-              ..*knot
-            }));
+            modified_knot = Some((i, knot.with_right_tangent_position(knot.right_tangent.position + self.canvas_to_curve_vec(interact_response.drag_delta()))));
           }
 
           let corrected = knot.right_tangent_corrected(next_knot);
@@ -352,10 +349,7 @@ impl LookupCurveEguiEditor {
           let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
 
           if interact_response.dragged_by(egui::PointerButton::Primary) {
-            modified_knot = Some((i, Knot {
-              left_tangent: knot.left_tangent.with_position(knot.left_tangent.position + self.canvas_to_curve_vec(interact_response.drag_delta())),
-              ..*knot
-            }));
+            modified_knot = Some((i, knot.with_left_tangent_position(knot.left_tangent.position + self.canvas_to_curve_vec(interact_response.drag_delta()))));
           }
 
           let corrected = knot.left_tangent_corrected(prev_knot);

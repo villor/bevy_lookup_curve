@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_inspector_egui::quick::{ResourceInspectorPlugin, AssetInspectorPlugin};
+use bevy_inspector_egui::quick::{AssetInspectorPlugin, ResourceInspectorPlugin};
 
 use bevy_lookup_curve::{
   LookupCurve,
@@ -26,6 +26,7 @@ fn main() {
 struct LookupCurveDevState {
   curve_handle: Handle<LookupCurve>,
   sample_dir: f32,
+  sample: f32,
   move_sample: bool,
 }
 
@@ -44,6 +45,7 @@ fn setup(
   commands.insert_resource(LookupCurveDevState {
     curve_handle: handle,
     sample_dir: 1.0,
+    sample: 0.0,
     move_sample: true,
   });
 }
@@ -53,14 +55,15 @@ fn move_sample(
   mut editor: Query<&mut LookupCurveEditor>,
   time: Res<Time>,
 ) {  
-  if dev_state.move_sample {
-    if let Ok(mut editor) = editor.get_single_mut() {
-      if editor.sample.unwrap() >= 1.5 {
+  if let Ok(mut editor) = editor.get_single_mut() {
+    if dev_state.move_sample {
+      if dev_state.sample >= 1.5 {
         dev_state.sample_dir = -1.0;
-      } else if editor.sample.unwrap() <= -0.5 {
+      } else if dev_state.sample <= -0.5 {
         dev_state.sample_dir = 1.0;
       }
-      editor.sample = Some(editor.sample.unwrap() + time.delta_seconds() * 0.3 * dev_state.sample_dir);
+      dev_state.sample += time.delta_seconds() * 0.3 * dev_state.sample_dir;
     }
+    editor.sample = Some(dev_state.sample)
   }
 }
