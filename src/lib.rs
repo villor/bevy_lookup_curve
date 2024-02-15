@@ -36,14 +36,14 @@ impl Tangent {
   fn default_left() -> Self {
     Self {
       position: Vec2::new(-0.1, 0.0),
-      mode: TangentMode::Aligned
+      ..Default::default()
     }
   }
 
   fn default_right() -> Self {
     Self {
       position: Vec2::new(0.1, 0.0),
-      mode: TangentMode::Aligned
+      ..Default::default()
     }
   }
 
@@ -51,6 +51,15 @@ impl Tangent {
     Self {
       mode,
       ..*self
+    }
+  }
+}
+
+impl Default for Tangent {
+  fn default() -> Self {
+    Self {
+      position: Vec2::ZERO,
+      mode: TangentMode::Aligned
     }
   }
 }
@@ -153,7 +162,7 @@ impl Default for Knot {
   fn default() -> Self {
     Self {
       position: Vec2::ZERO,
-      interpolation: KnotInterpolation::Linear,
+      interpolation: KnotInterpolation::Bezier,
       id: unique_knot_id(),
       right_tangent: Tangent::default_right(),
       left_tangent: Tangent::default_left(),
