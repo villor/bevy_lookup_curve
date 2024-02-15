@@ -46,6 +46,13 @@ impl Tangent {
       mode: TangentMode::Aligned
     }
   }
+
+  fn with_mode(&self, mode: TangentMode) -> Self {
+    Self {
+      mode,
+      ..*self
+    }
+  }
 }
 
 #[derive(Reflect, Copy, Clone, Debug, Serialize, Deserialize)]

@@ -6,7 +6,7 @@ use bevy_reflect::Reflect;
 use bevy_math::Vec2;
 use egui::{Pos2, Ui, emath, Frame, Shape, Color32, Rect, Painter, Stroke, Sense , epaint::CubicBezierShape};
 
-use crate::{LookupCurve, Knot, KnotInterpolation, asset::save_lookup_curve};
+use crate::{asset::save_lookup_curve, Knot, KnotInterpolation, LookupCurve, TangentMode};
 
 pub(crate) struct EditorPlugin;
 
@@ -320,6 +320,48 @@ impl LookupCurveEguiEditor {
             modified_knot = Some((i, knot.with_right_tangent_position(knot.right_tangent.position + self.canvas_to_curve_vec(interact_response.drag_delta()))));
           }
 
+          interact_response.context_menu(|ui| {
+            ui.label("Edit mode");
+            if ui.radio(matches!(knot.right_tangent.mode, TangentMode::Free), "Free").clicked() {
+              modified_knot = Some((i, Knot {
+                right_tangent: knot.right_tangent.with_mode(TangentMode::Free),
+                ..*knot
+              }));
+              ui.close_menu();
+            }
+            if ui.radio(matches!(knot.right_tangent.mode, TangentMode::Aligned), "Aligned").clicked() {
+              modified_knot = Some((i, Knot {
+                right_tangent: knot.right_tangent.with_mode(TangentMode::Aligned),
+                ..*knot
+              }));
+              ui.close_menu();
+            }
+
+            ui.label("Position");
+            ui.horizontal(|ui| {
+              ui.label("x:");
+              ui.add(egui::DragValue::from_get_set(|v|
+                match v {
+                  Some(v) => {
+                    modified_knot = Some((i, knot.with_right_tangent_position(Vec2::new(v as f32, knot.right_tangent.position.y))));
+                    v
+                  },
+                  _ => knot.right_tangent.position.x as f64,
+                }
+              ).speed(0.001));
+              ui.label("y:");
+              ui.add(egui::DragValue::from_get_set(|v|
+                match v {
+                  Some(v) => {
+                    modified_knot = Some((i, knot.with_right_tangent_position(Vec2::new(knot.right_tangent.position.x, v as f32))));
+                    v
+                  },
+                  _ => knot.right_tangent.position.y as f64,
+                }
+              ).speed(0.001));
+            });
+          });
+
           let corrected = knot.right_tangent_corrected(next_knot);
           let corrected_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position + corrected));
           if corrected != knot.right_tangent.position {
@@ -351,6 +393,48 @@ impl LookupCurveEguiEditor {
           if interact_response.dragged_by(egui::PointerButton::Primary) {
             modified_knot = Some((i, knot.with_left_tangent_position(knot.left_tangent.position + self.canvas_to_curve_vec(interact_response.drag_delta()))));
           }
+
+          interact_response.context_menu(|ui| {
+            ui.label("Edit mode");
+            if ui.radio(matches!(knot.left_tangent.mode, TangentMode::Free), "Free").clicked() {
+              modified_knot = Some((i, Knot {
+                left_tangent: knot.left_tangent.with_mode(TangentMode::Free),
+                ..*knot
+              }));
+              ui.close_menu();
+            }
+            if ui.radio(matches!(knot.left_tangent.mode, TangentMode::Aligned), "Aligned").clicked() {
+              modified_knot = Some((i, Knot {
+                left_tangent: knot.left_tangent.with_mode(TangentMode::Aligned),
+                ..*knot
+              }));
+              ui.close_menu();
+            }
+
+            ui.label("Position");
+            ui.horizontal(|ui| {
+              ui.label("x:");
+              ui.add(egui::DragValue::from_get_set(|v|
+                match v {
+                  Some(v) => {
+                    modified_knot = Some((i, knot.with_left_tangent_position(Vec2::new(v as f32, knot.left_tangent.position.y))));
+                    v
+                  },
+                  _ => knot.left_tangent.position.x as f64,
+                }
+              ).speed(0.001));
+              ui.label("y:");
+              ui.add(egui::DragValue::from_get_set(|v|
+                match v {
+                  Some(v) => {
+                    modified_knot = Some((i, knot.with_left_tangent_position(Vec2::new(knot.left_tangent.position.x, v as f32))));
+                    v
+                  },
+                  _ => knot.left_tangent.position.y as f64,
+                }
+              ).speed(0.001));
+            });
+          });
 
           let corrected = knot.left_tangent_corrected(prev_knot);
           let corrected_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position + corrected));
