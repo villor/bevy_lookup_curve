@@ -1,5 +1,12 @@
 [package]
 name = "bevy_lookup_curve"
+keywords = ["bevy"]
+license = "MIT OR Apache-2.0"
+description = "Editable spline for animation and other stuff"
+homepage = "https://crates.io/crates/bevy_lookup_curve"
+documentation = "https://docs.rs/bevy_lookup_curve"
+repository = "https://github.com/villor/bevy_lookup_curve"
+readme = "README.md"
 version = "0.1.0"
 edition = "2021"
 
