@@ -292,7 +292,7 @@ impl LookupCurve {
 /// Mostly a copy of code from https://github.com/bevyengine/bevy/blob/main/crates/bevy_math/src/cubic_splines.rs
 /// 
 /// Copied because the cubic_splines module does not exactly fit the API we need:
-/// 1. Allow constructing a single CubicSegment from bezier points (without allocating a cubiccurve and without restricting c0 and c1 to 0 and 1)
+/// 1. Allow constructing a single CubicSegment from bezier points (without allocating a CubicCurve, and without restricting c0 and c1 to 0 and 1)
 /// 2. find_y_given_x needs to be accessible
 #[derive(Clone, Debug, Default, PartialEq)]
 struct CubicSegment{
@@ -302,14 +302,14 @@ struct CubicSegment{
 impl CubicSegment {
   /// Instantaneous position of a point at parametric value `t`.
   #[inline]
-  pub fn position(&self, t: f32) -> Vec2 {
+  fn position(&self, t: f32) -> Vec2 {
     let [a, b, c, d] = self.coeff;
     a + b * t + c * t.powi(2) + d * t.powi(3)
   }
 
   /// Instantaneous velocity of a point at parametric value `t`.
   #[inline]
-  pub fn velocity(&self, t: f32) -> Vec2 {
+  fn velocity(&self, t: f32) -> Vec2 {
     let [_, b, c, d] = self.coeff;
     b + c * 2.0 * t + d * 3.0 * t.powi(2)
   }

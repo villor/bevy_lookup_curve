@@ -81,9 +81,6 @@ fn update(
     transform.translation.x = animate.from + (animate.to - animate.from) * animate_curve.0.find_y_given_x(animate.t);
 
     // draw editor
-    egui::Window::new("Lookup curve")
-      .show(contexts.ctx_mut(), |ui| {
-        editor.0.ui(ui, &mut animate_curve.0, Some(animate.t));
-      });
+    editor.0.ui_window(contexts.ctx_mut(), "Lookup curve", &mut animate_curve.0, Some(animate.t));
   }
 }

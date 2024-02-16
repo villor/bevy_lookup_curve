@@ -20,6 +20,9 @@ impl Plugin for EditorPlugin {
 }
 
 #[derive(Component, Reflect)]
+/// Component for convience of spawning lookup curve editor windows
+/// 
+/// Holds a [`handle`] to the loaded lookup curve asset
 pub struct LookupCurveEditor {
   pub title: String,
   pub curve_handle: Handle<LookupCurve>,
@@ -55,16 +58,17 @@ fn lookup_curve_editor_ui(
 ) {
   for mut editor in &mut editors {
     if let Some(curve) = curves.get_mut(&editor.curve_handle) {
-      egui::Window::new(editor.title.clone())
-        .show(contexts.ctx_mut(), |ui| {
-          let sample = editor.sample;
-          editor.egui_editor.ui(ui, curve, sample);
-        });
+      let sample = editor.sample;
+      let title = editor.title.clone();
+      editor.egui_editor.ui_window(contexts.ctx_mut(), title.as_str(), curve, sample);
     }
   }
 }
 
 #[derive(Reflect)]
+/// Lookup curve editor implemented using `egui`.
+/// 
+/// Holds the editor state.
 pub struct LookupCurveEguiEditor {
   //pub curve: Option<Handle<LookupCurve>>,
   pub offset: Vec2,
@@ -123,6 +127,15 @@ impl LookupCurveEguiEditor {
     canvas / self.editor_size * self.scale
   }
 
+  /// Display the editor in a window
+  pub fn ui_window(&mut self, ctx: &mut egui::Context, title: &str, curve: &mut LookupCurve, sample: Option<f32>) {
+    egui::Window::new(title)
+      .show(ctx, |ui| {
+        self.ui(ui, curve, sample);
+      });
+  }
+
+  /// Display the editor
   pub fn ui(&mut self, ui: &mut Ui, curve: &mut LookupCurve, sample: Option<f32>) {
     ui.label(format!("x = {}, y = {}", self.hover_point.x, self.hover_point.y));
 
