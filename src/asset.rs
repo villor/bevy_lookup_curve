@@ -1,10 +1,20 @@
+use bevy_app::{App, Plugin};
 use bevy_utils::{thiserror, BoxedFuture};
 use bevy_asset::{
-  io::Reader, AssetLoader, AsyncReadExt, LoadContext
+  io::Reader, AssetApp, AssetLoader, AsyncReadExt, LoadContext
 };
 use thiserror::Error;
 
 use crate::LookupCurve;
+
+pub(crate) struct AssetPlugin;
+
+impl Plugin for AssetPlugin {
+  fn build(&self, app: &mut App) {
+    app.init_asset::<LookupCurve>();
+    app.register_asset_loader(LookupCurveAssetLoader);
+  }
+}
 
 #[derive(Default)]
 pub struct LookupCurveAssetLoader;
@@ -54,6 +64,7 @@ pub enum LookupCurveAssetSaverError {
   RonError(#[from] ron::error::Error),
 }
 
+/// Serializes the lookup curve and saves it as a RON file
 pub fn save_lookup_curve(path: &str, curve: &LookupCurve) -> Result<(), LookupCurveAssetSaverError> {
   let config = ron::ser::PrettyConfig::new()
     .new_line("\n".to_string())

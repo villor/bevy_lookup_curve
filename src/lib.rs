@@ -4,17 +4,17 @@ use serde::{Serialize, Deserialize};
 use bevy_app::{App, Plugin};
 use bevy_math::Vec2;
 use bevy_reflect::Reflect;
-use bevy_asset::{Asset, AssetApp};
+use bevy_asset::Asset;
 
 pub mod editor;
 pub mod asset;
 
+/// Registers the asset loader and editor components
 pub struct LookupCurvePlugin;
 
 impl Plugin for LookupCurvePlugin {
   fn build(&self, app: &mut App) {
-    app.init_asset::<LookupCurve>();
-    app.register_asset_loader(asset::LookupCurveAssetLoader);
+    app.add_plugins(asset::AssetPlugin);
     app.add_plugins(editor::EditorPlugin);
   }
 }
@@ -22,10 +22,15 @@ impl Plugin for LookupCurvePlugin {
 /// How a tangent behaves when a knot or its tangents are moved
 #[derive(Reflect, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum TangentMode {
+  /// The tangent can be freely moved without affecting the other tangent
   Free,
+  /// When moving the tangent, the other tangent will be updated for a smooth curve.
+  /// 
+  /// Both tangents need [TangentMode::Aligned] for this to apply.
   Aligned
 }
 
+/// Tangents are used to control Bezier interpolation for [Knot]s in a [LookupCurve]
 #[derive(Reflect, Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct Tangent {
   pub position: Vec2,
@@ -47,6 +52,7 @@ impl Tangent {
     }
   }
 
+  /// Returns a copy of self, with mode set to `mode`.
   fn with_mode(&self, mode: TangentMode) -> Self {
     Self {
       mode,
@@ -64,6 +70,7 @@ impl Default for Tangent {
   }
 }
 
+/// Interpolation used between a [Knot] the next knot
 #[derive(Reflect, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum KnotInterpolation {
   Constant,
@@ -72,6 +79,7 @@ pub enum KnotInterpolation {
 }
 
 #[derive(Reflect, Copy, Clone, Debug, Serialize, Deserialize)]
+/// A knot in a [LookupCurve].
 pub struct Knot {
   /// The position of this knot in curve space
   pub position: Vec2,
@@ -85,6 +93,8 @@ pub struct Knot {
   pub right_tangent: Tangent,
 
   /// Identifier used by editor operations because index might change during modification
+  /// 
+  /// There should not be any need to change this as it will be set internally.
   #[serde(skip_serializing, default = "unique_knot_id")]
   pub id: usize,
 }
@@ -133,7 +143,7 @@ impl Knot {
     right_tangent
   }
 
-  /// Returns a new knot with the right tangent moved to `position`. This might also affect the left tangent depending on [`TangentMode`].
+  /// Returns a new knot copied from self, with the right tangent moved to `position`. This might also affect the left tangent depending on [`TangentMode`].
   fn with_right_tangent_position(&self, position: Vec2) -> Self {
     let mut knot = *self;
     knot.right_tangent.position = position;
@@ -145,7 +155,7 @@ impl Knot {
     knot
   }
 
-  /// Returns a new knot with the left tangent moved to `position`. This might also affect the right tangent depending on [`TangentMode`].
+  /// Returns a new knot copied from self, with the left tangent moved to `position`. This might also affect the right tangent depending on [`TangentMode`].
   fn with_left_tangent_position(&self, position: Vec2) -> Self {
     let mut knot = *self;
     knot.left_tangent.position = position;
@@ -174,6 +184,8 @@ impl Default for Knot {
 #[derive(Asset, Debug, Reflect, Serialize, Deserialize)]
 pub struct LookupCurve {
   knots: Vec<Knot>,
+  max_iters: u8,
+  max_error: f32 
 }
 
 impl LookupCurve {
@@ -186,20 +198,56 @@ impl LookupCurve {
     
     Self {
       knots,
+      ..Default::default()
     }
   }
 
+  /// Max iterations used for solving for y given x in cubic segments (Bezier)
+  pub fn max_iters(&self) -> u8 {
+    self.max_iters
+  }
+
+  /// Set max iterations used for solving for y given x in cubic segments (Bezier)
+  pub fn set_max_iters(&mut self, max_iters: u8) {
+    self.max_iters = max_iters;
+  }
+
+  /// Consumes the curve and returns it with max_iters set to the new value
+  pub fn with_max_iters(mut self, max_iters: u8) -> Self {
+    self.set_max_iters(max_iters);
+    self
+  }
+
+  /// Max error allowed when solving for y given x in cubic segments (Bezier).
+  pub fn max_error(&self) -> f32 {
+    self.max_error
+  }
+
+  /// Set max error allowed when solving for y given x in cubic segments (Bezier).
+  pub fn set_max_error(&mut self, max_error: f32) {
+    self.max_error = max_error;
+  }
+
+  /// Consumes the curve and returns it with max_errors set to the new value
+  pub fn with_max_error(mut self, max_error: f32) -> Self {
+    self.set_max_error(max_error);
+    self
+  }
+
+  /// Returns the knots in the curve as a slice
   pub fn knots(&self) -> &[Knot] {
     self.knots.as_slice()
   }
 
   #[inline]
+  /// Given a knot index, returns the previous knot in the curve, or `None` if there is no previous knot.
   pub fn prev_knot(&self, i: usize) -> Option<&Knot> {
     if i > 0 {
       Some(&self.knots[i - 1])
     } else { None }
   }
 
+  /// Given a knot index, returns the next knot in the curve, or `None` if there is no next knot.
   #[inline]
   pub fn next_knot(&self, i: usize) -> Option<&Knot> {
     if i < self.knots.len() - 1 {
@@ -207,8 +255,8 @@ impl LookupCurve {
     } else { None }
   }
 
-  /// Adds a knot. Returns the index of the added knot.
-  fn add_knot(&mut self, knot: Knot) -> usize {
+  /// Adds a knot to the curve. Returns the index of the added knot.
+  pub fn add_knot(&mut self, knot: Knot) -> usize {
     if self.knots.is_empty() || knot.position.x > self.knots.last().unwrap().position.x {
       self.knots.push(knot);
       return self.knots.len() - 1;
@@ -220,7 +268,7 @@ impl LookupCurve {
   }
 
   /// Modifies an existing knot in the lookup curve. Returns the new (possibly unchanged) index of the knot.
-  fn modify_knot(&mut self, i: usize, new_value: Knot) -> usize {
+  pub fn modify_knot(&mut self, i: usize, new_value: Knot) -> usize {
     let old_value = self.knots[i];
 
     if old_value.position.x == new_value.position.x {
@@ -246,11 +294,11 @@ impl LookupCurve {
   }
 
   /// Deletes a knot given index
-  fn delete_knot(&mut self, i: usize) {
+  pub fn delete_knot(&mut self, i: usize) {
     self.knots.remove(i);
   }
 
-  /// Find y given x
+  /// Solves for y, given x
   pub fn find_y_given_x(&self, x: f32) -> f32 {
     // Return repeated constant values outside of knot range
     if self.knots.is_empty() {
@@ -283,8 +331,18 @@ impl LookupCurve {
           knot_a.position + knot_a.right_tangent_corrected(Some(knot_b)),
           knot_b.position + knot_b.left_tangent_corrected(Some(&knot_a)),
           knot_b.position,
-        ]).find_y_given_x(x)
+        ]).find_y_given_x(x, self.max_error, self.max_iters)
       }
+    }
+  }
+}
+
+impl Default for LookupCurve {
+  fn default() -> Self {
+    Self {
+      knots: vec![],
+      max_iters: 8,
+      max_error: 1e-5,
     }
   }
 }
@@ -294,6 +352,7 @@ impl LookupCurve {
 /// Copied because the cubic_splines module does not exactly fit the API we need:
 /// 1. Allow constructing a single CubicSegment from bezier points (without allocating a CubicCurve, and without restricting c0 and c1 to 0 and 1)
 /// 2. find_y_given_x needs to be accessible
+/// 3. max_iters and max_error should be configurable
 #[derive(Clone, Debug, Default, PartialEq)]
 struct CubicSegment{
   coeff: [Vec2; 4],
@@ -314,17 +373,14 @@ impl CubicSegment {
     b + c * 2.0 * t + d * 3.0 * t.powi(2)
   }
 
-  #[inline]
-  fn find_y_given_x(&self, x: f32) -> f32 {
-    const MAX_ERROR: f32 = 1e-5;
-    const MAX_ITERS: u8 = 8;
-  
+#[inline]
+  fn find_y_given_x(&self, x: f32, max_error: f32, max_iters: u8) -> f32 {
     let mut t_guess = x;
     let mut pos_guess = Vec2::ZERO;
-    for _ in 0..MAX_ITERS {
+    for _ in 0..max_iters {
       pos_guess = self.position(t_guess);
       let error = pos_guess.x - x;
-      if error.abs() <= MAX_ERROR {
+      if error.abs() <= max_error {
           break;
       }
       // Using Newton's method, use the tangent line to estimate a better guess value.

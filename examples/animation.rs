@@ -52,7 +52,7 @@ fn setup(
       speed: 0.3,
     },
     AnimateWithCurve(LookupCurve::new(vec![
-      Knot { position: Vec2::ZERO, interpolation: KnotInterpolation::Linear, ..default() },
+      Knot { position: Vec2::ZERO, interpolation: KnotInterpolation::Linear, ..Default::default() },
       Knot { position: Vec2::ONE, interpolation: KnotInterpolation::Linear, ..default() }
     ])),
     EditorWindow(LookupCurveEguiEditor::default()),

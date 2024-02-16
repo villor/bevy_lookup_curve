@@ -22,7 +22,7 @@ impl Plugin for EditorPlugin {
 #[derive(Component, Reflect)]
 /// Component for convience of spawning lookup curve editor windows
 /// 
-/// Holds a [`handle`] to the loaded lookup curve asset
+/// Holds a `curve_handle` to the loaded lookup curve asset
 pub struct LookupCurveEditor {
   pub title: String,
   pub curve_handle: Handle<LookupCurve>,
@@ -31,6 +31,7 @@ pub struct LookupCurveEditor {
 }
 
 impl LookupCurveEditor {
+  /// Constructs a [LookupCurveEditor] with the supplied `curve_handle`.
   pub fn new(curve_handle: Handle<LookupCurve>) -> Self {
     Self {
       title: "Lookup curve".to_string(),
@@ -40,6 +41,7 @@ impl LookupCurveEditor {
     }
   }
 
+  /// Constructs a [LookupCurveEditor] with the supplied `curve_handle` and `path` as save path.
   pub fn with_save_path(curve_handle: Handle<LookupCurve>, path: String) -> Self {
     Self {
       egui_editor: LookupCurveEguiEditor {
@@ -103,6 +105,7 @@ impl Default for LookupCurveEguiEditor {
 
 impl LookupCurveEguiEditor {
 
+  /// Constructs a [LookupCurveEguiEditor] with the supplied `path` as save path.
   pub fn with_save_path(path: String) -> Self {
     Self {
       ron_path: Some(path),
@@ -112,6 +115,7 @@ impl LookupCurveEguiEditor {
 
   // TODO : Rename these functions and make them clearer
   // Move to a paintcontext? with access to to_screeen / to_canvas
+
   fn curve_to_canvas(&self, curve: Vec2) -> Pos2 {
     let canvas = (curve - self.offset) * self.editor_size / self.scale;
     Pos2::new(canvas.x, self.editor_size.y - canvas.y)
@@ -128,6 +132,8 @@ impl LookupCurveEguiEditor {
   }
 
   /// Display the editor in a window
+  /// 
+  /// If a `sample` is supplied, it will be displayed as a red dot on the curve.
   pub fn ui_window(&mut self, ctx: &mut egui::Context, title: &str, curve: &mut LookupCurve, sample: Option<f32>) {
     egui::Window::new(title)
       .show(ctx, |ui| {
@@ -136,6 +142,8 @@ impl LookupCurveEguiEditor {
   }
 
   /// Display the editor
+  /// 
+  /// If a `sample` is supplied, it will be displayed as a red dot on the curve.
   pub fn ui(&mut self, ui: &mut Ui, curve: &mut LookupCurve, sample: Option<f32>) {
     ui.label(format!("x = {}, y = {}", self.hover_point.x, self.hover_point.y));
 
