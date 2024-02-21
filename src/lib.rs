@@ -185,11 +185,20 @@ impl Default for Knot {
     }
 }
 
+const fn max_iters_default() -> u8 {
+    8
+}
+const fn max_error_default() -> f32 {
+    1e-5
+}
+
 /// Two-dimensional spline that only allows a single y-value per x-value
 #[derive(Asset, Debug, Reflect, Serialize, Deserialize)]
 pub struct LookupCurve {
     knots: Vec<Knot>,
+    #[serde(default = "max_iters_default")]
     max_iters: u8,
+    #[serde(default = "max_error_default")]
     max_error: f32,
 }
 
@@ -356,8 +365,8 @@ impl Default for LookupCurve {
     fn default() -> Self {
         Self {
             knots: vec![],
-            max_iters: 8,
-            max_error: 1e-5,
+            max_iters: max_iters_default(),
+            max_error: max_error_default(),
         }
     }
 }
