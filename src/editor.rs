@@ -167,7 +167,7 @@ impl LookupCurveEguiEditor {
         }
 
         Frame::canvas(ui.style()).show(ui, |ui| {
-            let (mut response, painter) = ui.allocate_painter(
+            let (response, painter) = ui.allocate_painter(
                 emath::Vec2::new(ui.available_width(), ui.available_height()),
                 Sense::click_and_drag(),
             );
