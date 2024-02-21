@@ -190,7 +190,7 @@ impl LookupCurveEguiEditor {
 
                 // Zooming
                 ui.input(|input| {
-                    let scroll_delta = input.scroll_delta.y;
+                    let scroll_delta = input.raw_scroll_delta.y;
                     if scroll_delta != 0.0 {
                         self.scale *= 1.0 + -scroll_delta * 0.001;
                         // TODO: adjust offset accordingly
@@ -205,7 +205,7 @@ impl LookupCurveEguiEditor {
                 self.offset -= self.canvas_to_curve_vec(response.drag_delta());
             }
 
-            response = response.context_menu(|ui| {
+            response.context_menu(|ui| {
                 let menu_pos = ui.min_rect().left_top(); // hacky and not entirely correct
                 if ui.button("Add knot").clicked() {
                     curve.add_knot(Knot {

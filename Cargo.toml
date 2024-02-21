@@ -12,27 +12,27 @@ edition = "2021"
 
 [dependencies]
 # core
-bevy_app = "0.12"
-bevy_math = "0.12"
-bevy_ecs = "0.12"
-bevy_reflect = { version = "0.12", features = ['bevy'] }
-bevy_log = "0.12"
+bevy_app = "0.13"
+bevy_math = "0.13"
+bevy_ecs = "0.13"
+bevy_reflect = { version = "0.13", features = ['bevy'] }
+bevy_log = "0.13"
 
 # asset
-bevy_asset = "0.12"
-bevy_utils = "0.12"
+bevy_asset = "0.13"
+bevy_utils = "0.13"
 ron = "0.8"
 thiserror = "1.0"
 serde = "1.0"
 
 # egui editor
-egui = "0.24"
-bevy_egui = "0.24"
+egui = "0.26"
+bevy_egui = "0.25"
 
 # egui inspector
 # bevy_app = "0.10"
 # bevy-inspector-egui = { version = "0.18", default-features = false }
 
 [dev-dependencies]
-bevy = { version = "0.12.1", default-features = false, features = ["x11", "bevy_winit", "bevy_sprite", "bevy_core_pipeline", "bevy_render", "bevy_asset", "png", "multi-threaded"] }
-bevy-inspector-egui = { version = "0.22.1", default-features = false }
+bevy = { version = "0.13.0", default-features = false, features = ["x11", "bevy_winit", "bevy_sprite", "bevy_core_pipeline", "bevy_render", "bevy_asset", "png", "multi-threaded"] }
+bevy-inspector-egui = { version = "0.23.1", default-features = false }
