@@ -9,17 +9,6 @@ If you have used AnimationCurve in Unity, this would be an attempt at something 
 * Egui based editor
 * Asset loader and save functionality 
 
-## Todo
-- [ ] LookupCurve: Optimize bezier (precompute CubicSegments)
-- [ ] Editor: Clean up code
-- [ ] Editor: Snap to grid
-- [ ] Editor: Adaptive grid size
-- [ ] Editor: Natural zoom
-- [ ] Editor: Show/hide knots/tangents
-- [ ] bevy_inspector_egui support
-- [ ] Crate features: 'editor' (if no editor is needed, we dont need deps for bevy_egui etc), 'assets' (if curve is not loaded as asset we don't need bevy_asset, serde, ron, thiserror etc)
-- [ ] LookupTable generated from pre-sampling a LookupCurve (for performance). With lerp
-
 ## Contributing
 Contributions are welcome. Feel free to make a PR! 
 
