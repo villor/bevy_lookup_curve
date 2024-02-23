@@ -9,6 +9,12 @@ If you have used AnimationCurve in Unity, this would be an attempt at something 
 * Egui based editor
 * Asset loader and save functionality 
 
+
+
+https://github.com/villor/bevy_lookup_curve/assets/7102243/180aed95-ca9a-4e3b-97c4-2516055ea648
+
+
+
 ## Contributing
 Contributions are welcome. Feel free to make a PR! 
 
