@@ -147,21 +147,10 @@ impl Default for Knot {
     }
 }
 
-const fn max_iters_default() -> u8 {
-    8
-}
-const fn max_error_default() -> f32 {
-    1e-5
-}
-
 /// Two-dimensional spline that only allows a single y-value per x-value
 #[derive(Asset, Debug, Reflect, Serialize, Deserialize)]
 pub struct LookupCurve {
     knots: Vec<Knot>,
-    #[serde(default = "max_iters_default")]
-    max_iters: u8,
-    #[serde(default = "max_error_default")]
-    max_error: f32,
 }
 
 impl LookupCurve {
@@ -173,42 +162,7 @@ impl LookupCurve {
                 .expect("NaN is not allowed")
         });
 
-        Self {
-            knots,
-            ..Default::default()
-        }
-    }
-
-    /// Max iterations used for solving for y given x in cubic segments (Bezier)
-    pub fn max_iters(&self) -> u8 {
-        self.max_iters
-    }
-
-    /// Set max iterations used for solving for y given x in cubic segments (Bezier)
-    pub fn set_max_iters(&mut self, max_iters: u8) {
-        self.max_iters = max_iters;
-    }
-
-    /// Consumes the curve and returns it with max_iters set to the new value
-    pub fn with_max_iters(mut self, max_iters: u8) -> Self {
-        self.set_max_iters(max_iters);
-        self
-    }
-
-    /// Max error allowed when solving for y given x in cubic segments (Bezier).
-    pub fn max_error(&self) -> f32 {
-        self.max_error
-    }
-
-    /// Set max error allowed when solving for y given x in cubic segments (Bezier).
-    pub fn set_max_error(&mut self, max_error: f32) {
-        self.max_error = max_error;
-    }
-
-    /// Consumes the curve and returns it with max_errors set to the new value
-    pub fn with_max_error(mut self, max_error: f32) -> Self {
-        self.set_max_error(max_error);
-        self
+        Self { knots }
     }
 
     /// Returns the knots in the curve as a slice
@@ -320,16 +274,6 @@ impl LookupCurve {
             //     ])
             //     .find_y_given_x(x, self.max_error, self.max_iters)
             // }
-        }
-    }
-}
-
-impl Default for LookupCurve {
-    fn default() -> Self {
-        Self {
-            knots: vec![],
-            max_iters: max_iters_default(),
-            max_error: max_error_default(),
         }
     }
 }
