@@ -33,21 +33,21 @@ pub enum TangentMode {
 /// Tangents are used to control Bezier interpolation for [Knot]s in a [LookupCurve]
 #[derive(Reflect, Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct Tangent {
-    pub position: Vec2,
+    pub value: f32,
     pub mode: TangentMode,
 }
 
 impl Tangent {
     fn default_left() -> Self {
         Self {
-            position: Vec2::new(-0.1, 0.0),
+            value: 0.0,
             ..Default::default()
         }
     }
 
     fn default_right() -> Self {
         Self {
-            position: Vec2::new(0.1, 0.0),
+            value: 0.0,
             ..Default::default()
         }
     }
@@ -61,7 +61,7 @@ impl Tangent {
 impl Default for Tangent {
     fn default() -> Self {
         Self {
-            position: Vec2::ZERO,
+            value: 0.0,
             mode: TangentMode::Aligned,
         }
     }
@@ -72,7 +72,7 @@ impl Default for Tangent {
 pub enum KnotInterpolation {
     Constant,
     Linear,
-    Bezier,
+    Cubic,
 }
 
 #[derive(Reflect, Copy, Clone, Debug, Serialize, Deserialize)]
@@ -102,71 +102,33 @@ fn unique_knot_id() -> usize {
 }
 
 impl Knot {
-    // TODO: Refactor repetitive *_corrected-implementations
-
-    /// Returns the left tangent of this knot, corrected between the previous knot and this one.
-    /// Ensures the curve does not ever go backwards.
-    fn left_tangent_corrected(&self, prev_knot: Option<&Knot>) -> Vec2 {
-        let left_tangent = self.left_tangent.position;
-        if left_tangent.x >= 0.0 {
-            return Vec2::new(0.0, left_tangent.y);
-        }
-
-        if let Some(prev_knot) = prev_knot {
-            let min_x = prev_knot.position.x - self.position.x;
-            if left_tangent.x < min_x {
-                return Vec2::new(min_x, left_tangent.y * (min_x / left_tangent.x));
-            }
-        }
-
-        left_tangent
-    }
-
-    /// Returns the right tangent of this knot, corrected between the next knot and this one.
-    /// Ensures the curve does not ever go backwards.
-    fn right_tangent_corrected(&self, next_knot: Option<&Knot>) -> Vec2 {
-        let right_tangent = self.right_tangent.position;
-        if right_tangent.x <= 0.0 {
-            return Vec2::new(0.0, right_tangent.y);
-        }
-
-        if let Some(next_knot) = next_knot {
-            let max_x = next_knot.position.x - self.position.x;
-            if right_tangent.x > max_x {
-                return Vec2::new(max_x, right_tangent.y * (max_x / right_tangent.x));
-            }
-        }
-
-        right_tangent
-    }
-
-    /// Returns a new knot copied from self, with the right tangent moved to `position`. This might also affect the left tangent depending on [`TangentMode`].
-    fn with_right_tangent_position(&self, position: Vec2) -> Self {
+    /// Returns a new knot copied from self, with the right tangent value set to `value`. This might also affect the left tangent depending on [`TangentMode`].
+    fn with_right_tangent_value(&self, value: f32) -> Self {
         let mut knot = *self;
-        knot.right_tangent.position = position;
+        knot.right_tangent.value = value;
 
         if matches!(
             (self.left_tangent.mode, self.right_tangent.mode),
             (TangentMode::Aligned, TangentMode::Aligned)
         ) {
-            knot.left_tangent.position =
-                -position.normalize_or_zero() * knot.left_tangent.position.length();
+            // TODO
+            return knot;
         }
 
         knot
     }
 
-    /// Returns a new knot copied from self, with the left tangent moved to `position`. This might also affect the right tangent depending on [`TangentMode`].
-    fn with_left_tangent_position(&self, position: Vec2) -> Self {
+    /// Returns a new knot copied from self, with the left tangent value set to `value`. This might also affect the right tangent depending on [`TangentMode`].
+    fn with_left_tangent_value(&self, value: f32) -> Self {
         let mut knot = *self;
-        knot.left_tangent.position = position;
+        knot.left_tangent.value = value;
 
         if matches!(
             (self.left_tangent.mode, self.right_tangent.mode),
             (TangentMode::Aligned, TangentMode::Aligned)
         ) {
-            knot.right_tangent.position =
-                -position.normalize_or_zero() * knot.right_tangent.position.length();
+            // TODO
+            return knot;
         }
 
         knot
@@ -177,7 +139,7 @@ impl Default for Knot {
     fn default() -> Self {
         Self {
             position: Vec2::ZERO,
-            interpolation: KnotInterpolation::Bezier,
+            interpolation: KnotInterpolation::Linear,
             id: unique_knot_id(),
             right_tangent: Tangent::default_right(),
             left_tangent: Tangent::default_left(),
@@ -346,17 +308,18 @@ impl LookupCurve {
                 let s = (x - knot_a.position.x) / (knot_b.position.x - knot_a.position.x);
                 knot_a.position.lerp(knot_b.position, s).y
             }
-            KnotInterpolation::Bezier => {
-                let knot_b = &self.knots[i + 1];
-                // TODO: Optimize (we only need to calculate the coefficients when the knot is added/modified)
-                CubicSegment::from_bezier_points([
-                    knot_a.position,
-                    knot_a.position + knot_a.right_tangent_corrected(Some(knot_b)),
-                    knot_b.position + knot_b.left_tangent_corrected(Some(&knot_a)),
-                    knot_b.position,
-                ])
-                .find_y_given_x(x, self.max_error, self.max_iters)
-            }
+            KnotInterpolation::Cubic => knot_a.position.y,
+            // KnotInterpolation::Bezier => {
+            //     let knot_b = &self.knots[i + 1];
+            //     // TODO: Optimize (we only need to calculate the coefficients when the knot is added/modified)
+            //     CubicSegment::from_bezier_points([
+            //         knot_a.position,
+            //         knot_a.position + knot_a.right_tangent_corrected(Some(knot_b)),
+            //         knot_b.position + knot_b.left_tangent_corrected(Some(&knot_a)),
+            //         knot_b.position,
+            //     ])
+            //     .find_y_given_x(x, self.max_error, self.max_iters)
+            // }
         }
     }
 }
@@ -368,76 +331,5 @@ impl Default for LookupCurve {
             max_iters: max_iters_default(),
             max_error: max_error_default(),
         }
-    }
-}
-
-/// Mostly a copy of code from https://github.com/bevyengine/bevy/blob/main/crates/bevy_math/src/cubic_splines.rs
-///
-/// Copied because the cubic_splines module does not exactly fit the API we need:
-/// 1. Allow constructing a single CubicSegment from bezier points (without allocating a CubicCurve, and without restricting c0 and c1 to 0 and 1)
-/// 2. find_y_given_x needs to be accessible
-/// 3. max_iters and max_error should be configurable
-#[derive(Clone, Debug, Default, PartialEq)]
-struct CubicSegment {
-    coeff: [Vec2; 4],
-}
-
-impl CubicSegment {
-    /// Instantaneous position of a point at parametric value `t`.
-    #[inline]
-    fn position(&self, t: f32) -> Vec2 {
-        let [a, b, c, d] = self.coeff;
-        a + b * t + c * t.powi(2) + d * t.powi(3)
-    }
-
-    /// Instantaneous velocity of a point at parametric value `t`.
-    #[inline]
-    fn velocity(&self, t: f32) -> Vec2 {
-        let [_, b, c, d] = self.coeff;
-        b + c * 2.0 * t + d * 3.0 * t.powi(2)
-    }
-
-    #[inline]
-    fn find_y_given_x(&self, x: f32, max_error: f32, max_iters: u8) -> f32 {
-        let mut t_guess = x;
-        let mut pos_guess = Vec2::ZERO;
-        for _ in 0..max_iters {
-            pos_guess = self.position(t_guess);
-            let error = pos_guess.x - x;
-            if error.abs() <= max_error {
-                break;
-            }
-            // Using Newton's method, use the tangent line to estimate a better guess value.
-            let slope = self.velocity(t_guess).x; // dx/dt
-            t_guess -= error / slope;
-        }
-        pos_guess.y
-    }
-
-    #[inline]
-    fn from_bezier_points(control_points: [Vec2; 4]) -> CubicSegment {
-        let char_matrix = [
-            [1., 0., 0., 0.],
-            [-3., 3., 0., 0.],
-            [3., -6., 3., 0.],
-            [-1., 3., -3., 1.],
-        ];
-
-        Self::coefficients(control_points, 1.0, char_matrix)
-    }
-
-    #[inline]
-    fn coefficients(p: [Vec2; 4], multiplier: f32, char_matrix: [[f32; 4]; 4]) -> CubicSegment {
-        let [c0, c1, c2, c3] = char_matrix;
-        // These are the polynomial coefficients, computed by multiplying the characteristic
-        // matrix by the point matrix.
-        let mut coeff = [
-            p[0] * c0[0] + p[1] * c0[1] + p[2] * c0[2] + p[3] * c0[3],
-            p[0] * c1[0] + p[1] * c1[1] + p[2] * c1[2] + p[3] * c1[3],
-            p[0] * c2[0] + p[1] * c2[1] + p[2] * c2[2] + p[3] * c2[3],
-            p[0] * c3[0] + p[1] * c3[1] + p[2] * c3[2] + p[3] * c3[3],
-        ];
-        coeff.iter_mut().for_each(|c| *c *= multiplier);
-        CubicSegment { coeff }
     }
 }
