@@ -253,26 +253,39 @@ impl LookupCurveEguiEditor {
                                 curve_stroke,
                             ));
                         }
-                        KnotInterpolation::Bezier => {
-                            painter.add(CubicBezierShape::from_points_stroke(
-                                [
+                        KnotInterpolation::Cubic => {
+                            painter.add(Shape::line(
+                                vec![
                                     to_screen
                                         .transform_pos(self.curve_to_canvas(prev_knot.position)),
-                                    to_screen.transform_pos(self.curve_to_canvas(
-                                        prev_knot.position
-                                            + prev_knot.right_tangent_corrected(Some(knot)),
-                                    )),
-                                    to_screen.transform_pos(self.curve_to_canvas(
-                                        knot.position
-                                            + knot.left_tangent_corrected(Some(prev_knot)),
-                                    )),
+                                    to_screen.transform_pos(self.curve_to_canvas(Vec2::new(
+                                        knot.position.x,
+                                        prev_knot.position.y,
+                                    ))),
                                     to_screen.transform_pos(self.curve_to_canvas(knot.position)),
                                 ],
-                                false,
-                                Color32::TRANSPARENT,
                                 curve_stroke,
                             ));
-                        }
+                        } // KnotInterpolation::Bezier => {
+                          //     painter.add(CubicBezierShape::from_points_stroke(
+                          //         [
+                          //             to_screen
+                          //                 .transform_pos(self.curve_to_canvas(prev_knot.position)),
+                          //             to_screen.transform_pos(self.curve_to_canvas(
+                          //                 prev_knot.position
+                          //                     + prev_knot.right_tangent_corrected(Some(knot)),
+                          //             )),
+                          //             to_screen.transform_pos(self.curve_to_canvas(
+                          //                 knot.position
+                          //                     + knot.left_tangent_corrected(Some(prev_knot)),
+                          //             )),
+                          //             to_screen.transform_pos(self.curve_to_canvas(knot.position)),
+                          //         ],
+                          //         false,
+                          //         Color32::TRANSPARENT,
+                          //         curve_stroke,
+                          //     ));
+                          // }
                     }
                 }
 
@@ -285,7 +298,6 @@ impl LookupCurveEguiEditor {
             let mut deleted_knot_index = None;
             for (i, knot) in curve.knots().iter().enumerate() {
                 let prev_knot = curve.prev_knot(i);
-                let next_knot = curve.next_knot(i);
 
                 let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position));
                 let interact_rect =
@@ -340,15 +352,15 @@ impl LookupCurveEguiEditor {
                     }
                     if ui
                         .radio(
-                            matches!(knot.interpolation, KnotInterpolation::Bezier),
-                            "Bezier",
+                            matches!(knot.interpolation, KnotInterpolation::Cubic),
+                            "Cubic",
                         )
                         .clicked()
                     {
                         modified_knot = Some((
                             i,
                             Knot {
-                                interpolation: KnotInterpolation::Bezier,
+                                interpolation: KnotInterpolation::Cubic,
                                 ..*knot
                             },
                         ));
@@ -407,10 +419,9 @@ impl LookupCurveEguiEditor {
                 ));
 
                 // right tangent
-                if matches!(knot.interpolation, KnotInterpolation::Bezier) {
-                    let point_in_screen = to_screen.transform_pos(
-                        self.curve_to_canvas(knot.position + knot.right_tangent.position),
-                    );
+                if matches!(knot.interpolation, KnotInterpolation::Cubic) {
+                    let point_in_screen = to_screen
+                        .transform_pos(self.curve_to_canvas(knot.position + Vec2::new(0.1, 0.0)));
                     let interact_rect = Rect::from_center_size(
                         point_in_screen,
                         emath::Vec2::splat(2.0 * knot_radius),
@@ -421,9 +432,9 @@ impl LookupCurveEguiEditor {
                     if interact_response.dragged_by(egui::PointerButton::Primary) {
                         modified_knot = Some((
                             i,
-                            knot.with_right_tangent_position(
-                                knot.right_tangent.position
-                                    + self.canvas_to_curve_vec(interact_response.drag_delta()),
+                            knot.with_right_tangent_value(
+                                knot.right_tangent.value
+                                    + self.canvas_to_curve_vec(interact_response.drag_delta()).y,
                             ),
                         ));
                     }
@@ -464,74 +475,20 @@ impl LookupCurveEguiEditor {
 
                         ui.label("Position");
                         ui.horizontal(|ui| {
-                            ui.label("x:");
+                            ui.label("value:");
                             ui.add(
                                 egui::DragValue::from_get_set(|v| match v {
                                     Some(v) => {
-                                        modified_knot = Some((
-                                            i,
-                                            knot.with_right_tangent_position(Vec2::new(
-                                                v as f32,
-                                                knot.right_tangent.position.y,
-                                            )),
-                                        ));
+                                        modified_knot =
+                                            Some((i, knot.with_right_tangent_value(v as f32)));
                                         v
                                     }
-                                    _ => knot.right_tangent.position.x as f64,
-                                })
-                                .speed(0.001),
-                            );
-                            ui.label("y:");
-                            ui.add(
-                                egui::DragValue::from_get_set(|v| match v {
-                                    Some(v) => {
-                                        modified_knot = Some((
-                                            i,
-                                            knot.with_right_tangent_position(Vec2::new(
-                                                knot.right_tangent.position.x,
-                                                v as f32,
-                                            )),
-                                        ));
-                                        v
-                                    }
-                                    _ => knot.right_tangent.position.y as f64,
+                                    _ => knot.right_tangent.value as f64,
                                 })
                                 .speed(0.001),
                             );
                         });
                     });
-
-                    let corrected = knot.right_tangent_corrected(next_knot);
-                    let corrected_in_screen =
-                        to_screen.transform_pos(self.curve_to_canvas(knot.position + corrected));
-                    if corrected != knot.right_tangent.position {
-                        painter.add(Shape::dashed_line(
-                            &[
-                                to_screen.transform_pos(self.curve_to_canvas(knot.position)),
-                                corrected_in_screen,
-                            ],
-                            Stroke::new(1.0, Color32::GRAY),
-                            4.0,
-                            2.0,
-                        ));
-                        painter.add(Shape::dashed_line(
-                            &[corrected_in_screen, point_in_screen],
-                            Stroke::new(1.0, Color32::RED),
-                            4.0,
-                            2.0,
-                        ));
-                        painter.add(Shape::circle_filled(corrected_in_screen, 2.0, Color32::RED));
-                    } else {
-                        painter.add(Shape::dashed_line(
-                            &[
-                                to_screen.transform_pos(self.curve_to_canvas(knot.position)),
-                                corrected_in_screen,
-                            ],
-                            Stroke::new(1.0, Color32::GRAY),
-                            4.0,
-                            2.0,
-                        ));
-                    }
 
                     painter.add(Shape::circle_filled(
                         point_in_screen,
@@ -542,11 +499,10 @@ impl LookupCurveEguiEditor {
 
                 // left tangent
                 if prev_knot.is_some()
-                    && matches!(prev_knot.unwrap().interpolation, KnotInterpolation::Bezier)
+                    && matches!(prev_knot.unwrap().interpolation, KnotInterpolation::Cubic)
                 {
-                    let point_in_screen = to_screen.transform_pos(
-                        self.curve_to_canvas(knot.position + knot.left_tangent.position),
-                    );
+                    let point_in_screen = to_screen
+                        .transform_pos(self.curve_to_canvas(knot.position + Vec2::new(0.0, -0.1)));
                     let interact_rect = Rect::from_center_size(
                         point_in_screen,
                         emath::Vec2::splat(2.0 * knot_radius),
@@ -557,9 +513,9 @@ impl LookupCurveEguiEditor {
                     if interact_response.dragged_by(egui::PointerButton::Primary) {
                         modified_knot = Some((
                             i,
-                            knot.with_left_tangent_position(
-                                knot.left_tangent.position
-                                    + self.canvas_to_curve_vec(interact_response.drag_delta()),
+                            knot.with_left_tangent_value(
+                                knot.left_tangent.value
+                                    + self.canvas_to_curve_vec(interact_response.drag_delta()).y,
                             ),
                         ));
                     }
@@ -598,74 +554,20 @@ impl LookupCurveEguiEditor {
 
                         ui.label("Position");
                         ui.horizontal(|ui| {
-                            ui.label("x:");
+                            ui.label("value:");
                             ui.add(
                                 egui::DragValue::from_get_set(|v| match v {
                                     Some(v) => {
-                                        modified_knot = Some((
-                                            i,
-                                            knot.with_left_tangent_position(Vec2::new(
-                                                v as f32,
-                                                knot.left_tangent.position.y,
-                                            )),
-                                        ));
+                                        modified_knot =
+                                            Some((i, knot.with_left_tangent_value(v as f32)));
                                         v
                                     }
-                                    _ => knot.left_tangent.position.x as f64,
-                                })
-                                .speed(0.001),
-                            );
-                            ui.label("y:");
-                            ui.add(
-                                egui::DragValue::from_get_set(|v| match v {
-                                    Some(v) => {
-                                        modified_knot = Some((
-                                            i,
-                                            knot.with_left_tangent_position(Vec2::new(
-                                                knot.left_tangent.position.x,
-                                                v as f32,
-                                            )),
-                                        ));
-                                        v
-                                    }
-                                    _ => knot.left_tangent.position.y as f64,
+                                    _ => knot.left_tangent.value as f64,
                                 })
                                 .speed(0.001),
                             );
                         });
                     });
-
-                    let corrected = knot.left_tangent_corrected(prev_knot);
-                    let corrected_in_screen =
-                        to_screen.transform_pos(self.curve_to_canvas(knot.position + corrected));
-                    if corrected != knot.left_tangent.position {
-                        painter.add(Shape::dashed_line(
-                            &[
-                                to_screen.transform_pos(self.curve_to_canvas(knot.position)),
-                                corrected_in_screen,
-                            ],
-                            Stroke::new(1.0, Color32::GRAY),
-                            4.0,
-                            2.0,
-                        ));
-                        painter.add(Shape::dashed_line(
-                            &[corrected_in_screen, point_in_screen],
-                            Stroke::new(1.0, Color32::RED),
-                            4.0,
-                            2.0,
-                        ));
-                        painter.add(Shape::circle_filled(corrected_in_screen, 2.0, Color32::RED));
-                    } else {
-                        painter.add(Shape::dashed_line(
-                            &[
-                                to_screen.transform_pos(self.curve_to_canvas(knot.position)),
-                                corrected_in_screen,
-                            ],
-                            Stroke::new(1.0, Color32::GRAY),
-                            4.0,
-                            2.0,
-                        ));
-                    }
 
                     painter.add(Shape::circle_filled(
                         point_in_screen,

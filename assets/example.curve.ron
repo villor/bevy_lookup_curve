@@ -2,37 +2,37 @@
   knots: [
     (
       position: (0.0, 0.0),
-      interpolation: Bezier,
+      interpolation: Cubic,
       left_tangent: (
-        position: (-0.1, 0.0),
+        value: 0.0,
         mode: Aligned,
       ),
       right_tangent: (
-        position: (0.1, 0.0),
+        value: 0.0,
         mode: Aligned,
       ),
     ),
     (
       position: (0.3830273, 0.5604923),
-      interpolation: Bezier,
+      interpolation: Cubic,
       left_tangent: (
-        position: (-0.1719766, 0.19135374),
+        value: 0.0,
         mode: Aligned,
       ),
       right_tangent: (
-        position: (0.2149687, -0.23918988),
+        value: 0.0,
         mode: Aligned,
       ),
     ),
     (
       position: (1.0, 1.0),
-      interpolation: Bezier,
+      interpolation: Cubic,
       left_tangent: (
-        position: (-0.29013768, -0.16516939),
+        value: 0.0,
         mode: Aligned,
       ),
       right_tangent: (
-        position: (0.0, 0.0),
+        value: 0.0,
         mode: Aligned,
       ),
     ),
