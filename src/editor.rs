@@ -4,9 +4,7 @@ use bevy_ecs::prelude::{Component, Query, ResMut};
 use bevy_egui::{EguiContexts, EguiPlugin};
 use bevy_math::Vec2;
 use bevy_reflect::Reflect;
-use egui::{
-    emath, epaint::CubicBezierShape, Color32, Frame, Painter, Pos2, Rect, Sense, Shape, Stroke, Ui,
-};
+use egui::{emath, Color32, Frame, Painter, Pos2, Rect, Sense, Shape, Stroke, Ui};
 
 use crate::{asset::save_lookup_curve, Knot, KnotInterpolation, LookupCurve, TangentMode};
 
