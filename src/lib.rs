@@ -262,18 +262,28 @@ impl LookupCurve {
                 let s = (x - knot_a.position.x) / (knot_b.position.x - knot_a.position.x);
                 knot_a.position.lerp(knot_b.position, s).y
             }
-            KnotInterpolation::Cubic => knot_a.position.y,
-            // KnotInterpolation::Bezier => {
-            //     let knot_b = &self.knots[i + 1];
-            //     // TODO: Optimize (we only need to calculate the coefficients when the knot is added/modified)
-            //     CubicSegment::from_bezier_points([
-            //         knot_a.position,
-            //         knot_a.position + knot_a.right_tangent_corrected(Some(knot_b)),
-            //         knot_b.position + knot_b.left_tangent_corrected(Some(&knot_a)),
-            //         knot_b.position,
-            //     ])
-            //     .find_y_given_x(x, self.max_error, self.max_iters)
-            // }
+            KnotInterpolation::Cubic => {
+                let knot_b = &self.knots[i + 1];
+                unweighted_cubic_interp(&knot_a, knot_b, x)
+            }
         }
     }
+}
+
+#[inline]
+fn unweighted_cubic_interp(knot_a: &Knot, knot_b: &Knot, x: f32) -> f32 {
+    let x = (x - knot_a.position.x) / (knot_b.position.x - knot_a.position.x);
+    let dx = knot_b.position.x - knot_a.position.x;
+    let m0 = knot_a.right_tangent.value * dx;
+    let m1 = knot_b.left_tangent.value * dx;
+
+    let x2 = x * x;
+    let x3 = x2 * x;
+
+    let a = 2. * x3 - 3. * x2 + 1.;
+    let b = x3 - 2. * x2 + x;
+    let c = x3 - x2;
+    let d = -2. * x3 + 3. * x2;
+
+    a * knot_a.position.y + b * m0 + c * m1 + d * knot_b.position.y
 }
