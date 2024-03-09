@@ -4,7 +4,9 @@ use bevy_ecs::prelude::{Component, Query, ResMut};
 use bevy_egui::{EguiContexts, EguiPlugin};
 use bevy_math::Vec2;
 use bevy_reflect::Reflect;
-use egui::{emath, Color32, Frame, Painter, Pos2, Rect, Sense, Shape, Stroke, Ui};
+use egui::{
+    emath, epaint::CubicBezierShape, Color32, Frame, Painter, Pos2, Rect, Sense, Shape, Stroke, Ui,
+};
 
 use crate::{asset::save_lookup_curve, Knot, KnotInterpolation, LookupCurve, TangentMode};
 
@@ -252,38 +254,28 @@ impl LookupCurveEguiEditor {
                             ));
                         }
                         KnotInterpolation::Cubic => {
-                            painter.add(Shape::line(
-                                vec![
+                            let slope_a = prev_knot.right_tangent.value;
+                            let slope_b = knot.left_tangent.value;
+                            let dx = knot.position.x - prev_knot.position.x;
+                            painter.add(CubicBezierShape::from_points_stroke(
+                                [
                                     to_screen
                                         .transform_pos(self.curve_to_canvas(prev_knot.position)),
                                     to_screen.transform_pos(self.curve_to_canvas(Vec2::new(
-                                        knot.position.x,
-                                        prev_knot.position.y,
+                                        prev_knot.position.x + (1. / 3.) * dx,
+                                        prev_knot.position.y + (1. / 3.) * slope_a * dx,
+                                    ))),
+                                    to_screen.transform_pos(self.curve_to_canvas(Vec2::new(
+                                        knot.position.x - (1. / 3.) * dx,
+                                        knot.position.y - (1. / 3.) * slope_b * dx,
                                     ))),
                                     to_screen.transform_pos(self.curve_to_canvas(knot.position)),
                                 ],
+                                false,
+                                Color32::TRANSPARENT,
                                 curve_stroke,
                             ));
-                        } // KnotInterpolation::Bezier => {
-                          //     painter.add(CubicBezierShape::from_points_stroke(
-                          //         [
-                          //             to_screen
-                          //                 .transform_pos(self.curve_to_canvas(prev_knot.position)),
-                          //             to_screen.transform_pos(self.curve_to_canvas(
-                          //                 prev_knot.position
-                          //                     + prev_knot.right_tangent_corrected(Some(knot)),
-                          //             )),
-                          //             to_screen.transform_pos(self.curve_to_canvas(
-                          //                 knot.position
-                          //                     + knot.left_tangent_corrected(Some(prev_knot)),
-                          //             )),
-                          //             to_screen.transform_pos(self.curve_to_canvas(knot.position)),
-                          //         ],
-                          //         false,
-                          //         Color32::TRANSPARENT,
-                          //         curve_stroke,
-                          //     ));
-                          // }
+                        }
                     }
                 }
 
@@ -500,7 +492,7 @@ impl LookupCurveEguiEditor {
                     && matches!(prev_knot.unwrap().interpolation, KnotInterpolation::Cubic)
                 {
                     let point_in_screen = to_screen
-                        .transform_pos(self.curve_to_canvas(knot.position + Vec2::new(0.0, -0.1)));
+                        .transform_pos(self.curve_to_canvas(knot.position + Vec2::new(-0.1, 0.0)));
                     let interact_rect = Rect::from_center_size(
                         point_in_screen,
                         emath::Vec2::splat(2.0 * knot_radius),
