@@ -111,8 +111,7 @@ impl Knot {
             (self.left_tangent.mode, self.right_tangent.mode),
             (TangentMode::Aligned, TangentMode::Aligned)
         ) {
-            // TODO
-            return knot;
+            knot.left_tangent.value = value;
         }
 
         knot
@@ -127,8 +126,7 @@ impl Knot {
             (self.left_tangent.mode, self.right_tangent.mode),
             (TangentMode::Aligned, TangentMode::Aligned)
         ) {
-            // TODO
-            return knot;
+            knot.right_tangent.value = value;
         }
 
         knot

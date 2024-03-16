@@ -124,6 +124,11 @@ impl LookupCurveEguiEditor {
         Pos2::new(canvas.x, self.editor_size.y - canvas.y)
     }
 
+    fn curve_to_canvas_vec(&self, curve: Vec2) -> emath::Vec2 {
+        let canvas = curve * self.editor_size / self.scale;
+        emath::Vec2::new(canvas.x, -canvas.y)
+    }
+
     fn canvas_to_curve(&self, canvas: Pos2) -> Vec2 {
         let canvas = Vec2::new(canvas.x, self.editor_size.y - canvas.y);
         self.offset + canvas / self.editor_size * self.scale
@@ -254,23 +259,9 @@ impl LookupCurveEguiEditor {
                             ));
                         }
                         KnotInterpolation::Cubic => {
-                            let slope_a = prev_knot.right_tangent.value;
-                            let slope_b = knot.left_tangent.value;
-                            let dx = knot.position.x - prev_knot.position.x;
                             painter.add(CubicBezierShape::from_points_stroke(
-                                [
-                                    to_screen
-                                        .transform_pos(self.curve_to_canvas(prev_knot.position)),
-                                    to_screen.transform_pos(self.curve_to_canvas(Vec2::new(
-                                        prev_knot.position.x + (1. / 3.) * dx,
-                                        prev_knot.position.y + (1. / 3.) * slope_a * dx,
-                                    ))),
-                                    to_screen.transform_pos(self.curve_to_canvas(Vec2::new(
-                                        knot.position.x - (1. / 3.) * dx,
-                                        knot.position.y - (1. / 3.) * slope_b * dx,
-                                    ))),
-                                    to_screen.transform_pos(self.curve_to_canvas(knot.position)),
-                                ],
+                                compute_bezier(prev_knot, knot)
+                                    .map(|p| to_screen.transform_pos(self.curve_to_canvas(p))),
                                 false,
                                 Color32::TRANSPARENT,
                                 curve_stroke,
@@ -288,6 +279,7 @@ impl LookupCurveEguiEditor {
             let mut deleted_knot_index = None;
             for (i, knot) in curve.knots().iter().enumerate() {
                 let prev_knot = curve.prev_knot(i);
+                let next_knot = curve.next_knot(i);
 
                 let point_in_screen = to_screen.transform_pos(self.curve_to_canvas(knot.position));
                 let interact_rect =
@@ -409,9 +401,16 @@ impl LookupCurveEguiEditor {
                 ));
 
                 // right tangent
-                if matches!(knot.interpolation, KnotInterpolation::Cubic) {
-                    let point_in_screen = to_screen
-                        .transform_pos(self.curve_to_canvas(knot.position + Vec2::new(0.1, 0.0)));
+                const UNWEIGHTED_TANGENT_LEN: f32 = 60.;
+                if matches!(knot.interpolation, KnotInterpolation::Cubic) && next_knot.is_some() {
+                    let bezier = compute_bezier(knot, next_knot.unwrap());
+                    let point_in_canvas = self.curve_to_canvas(knot.position)
+                        + self
+                            .curve_to_canvas_vec(bezier[1] - knot.position)
+                            .normalized()
+                            * UNWEIGHTED_TANGENT_LEN;
+                    let point_in_screen = to_screen.transform_pos(point_in_canvas);
+
                     let interact_rect = Rect::from_center_size(
                         point_in_screen,
                         emath::Vec2::splat(2.0 * knot_radius),
@@ -420,13 +419,19 @@ impl LookupCurveEguiEditor {
                     let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
 
                     if interact_response.dragged_by(egui::PointerButton::Primary) {
-                        modified_knot = Some((
-                            i,
-                            knot.with_right_tangent_value(
-                                knot.right_tangent.value
-                                    + self.canvas_to_curve_vec(interact_response.drag_delta()).y,
-                            ),
-                        ));
+                        let mut c1 = self.canvas_to_curve(
+                            to_canvas
+                                .transform_pos(interact_response.interact_pointer_pos().unwrap()),
+                        );
+
+                        // Unweighted x is always 1/3 of dx
+                        let x = (bezier[3].x - bezier[0].x) / 3.;
+                        let relative_c1 = c1 - bezier[0];
+                        c1 = bezier[0] + relative_c1 * (x / relative_c1.x);
+
+                        let new_bezier = [bezier[0], c1, bezier[2], bezier[3]];
+                        let (new_slope, _) = slope_weight_from_bezier_out(&new_bezier);
+                        modified_knot = Some((i, knot.with_right_tangent_value(new_slope)));
                     }
 
                     interact_response.context_menu(|ui| {
@@ -480,6 +485,16 @@ impl LookupCurveEguiEditor {
                         });
                     });
 
+                    painter.add(Shape::dashed_line(
+                        &[
+                            to_screen.transform_pos(self.curve_to_canvas(knot.position)),
+                            point_in_screen,
+                        ],
+                        Stroke::new(1.0, Color32::GRAY),
+                        4.0,
+                        2.0,
+                    ));
+
                     painter.add(Shape::circle_filled(
                         point_in_screen,
                         3.0,
@@ -491,8 +506,14 @@ impl LookupCurveEguiEditor {
                 if prev_knot.is_some()
                     && matches!(prev_knot.unwrap().interpolation, KnotInterpolation::Cubic)
                 {
-                    let point_in_screen = to_screen
-                        .transform_pos(self.curve_to_canvas(knot.position + Vec2::new(-0.1, 0.0)));
+                    let bezier = compute_bezier(prev_knot.unwrap(), knot);
+                    let point_in_canvas = self.curve_to_canvas(knot.position)
+                        + self
+                            .curve_to_canvas_vec(bezier[2] - knot.position)
+                            .normalized()
+                            * UNWEIGHTED_TANGENT_LEN;
+                    let point_in_screen = to_screen.transform_pos(point_in_canvas);
+
                     let interact_rect = Rect::from_center_size(
                         point_in_screen,
                         emath::Vec2::splat(2.0 * knot_radius),
@@ -508,6 +529,21 @@ impl LookupCurveEguiEditor {
                                     + self.canvas_to_curve_vec(interact_response.drag_delta()).y,
                             ),
                         ));
+                    }
+                    if interact_response.dragged_by(egui::PointerButton::Primary) {
+                        let mut c2 = self.canvas_to_curve(
+                            to_canvas
+                                .transform_pos(interact_response.interact_pointer_pos().unwrap()),
+                        );
+
+                        // Unweighted x is always 1/3 of dx
+                        let x = (bezier[0].x - bezier[3].x) / 3.;
+                        let relative_c2 = c2 - bezier[3];
+                        c2 = bezier[3] + relative_c2 * (x / relative_c2.x);
+
+                        let new_bezier = [bezier[0], bezier[1], c2, bezier[3]];
+                        let (new_slope, _) = slope_weight_from_bezier_in(&new_bezier);
+                        modified_knot = Some((i, knot.with_left_tangent_value(new_slope)));
                     }
 
                     interact_response.context_menu(|ui| {
@@ -558,6 +594,16 @@ impl LookupCurveEguiEditor {
                             );
                         });
                     });
+
+                    painter.add(Shape::dashed_line(
+                        &[
+                            to_screen.transform_pos(self.curve_to_canvas(knot.position)),
+                            point_in_screen,
+                        ],
+                        Stroke::new(1.0, Color32::GRAY),
+                        4.0,
+                        2.0,
+                    ));
 
                     painter.add(Shape::circle_filled(
                         point_in_screen,
@@ -657,4 +703,45 @@ impl LookupCurveEguiEditor {
             }
         }
     }
+}
+
+#[inline]
+fn compute_bezier(knot_a: &Knot, knot_b: &Knot) -> [Vec2; 4] {
+    let slope_a = knot_a.right_tangent.value;
+    let slope_b = knot_b.left_tangent.value;
+    let dx = knot_b.position.x - knot_a.position.x;
+    [
+        knot_a.position,
+        Vec2::new(
+            knot_a.position.x + (1. / 3.) * dx,
+            knot_a.position.y + (1. / 3.) * slope_a * dx,
+        ),
+        Vec2::new(
+            knot_b.position.x - (1. / 3.) * dx,
+            knot_b.position.y - (1. / 3.) * slope_b * dx,
+        ),
+        knot_b.position,
+    ]
+}
+
+#[inline]
+fn slope_weight_from_bezier_out(bezier: &[Vec2; 4]) -> (f32, f32) {
+    if bezier[3].x == bezier[0].x {
+        return (0.0, 1. / 3.);
+    }
+
+    let dx = bezier[3].x - bezier[0].x;
+    let weight = (bezier[1].x - bezier[0].x) / dx;
+    ((bezier[1].y - bezier[0].y) / (dx * weight), weight)
+}
+
+#[inline]
+fn slope_weight_from_bezier_in(bezier: &[Vec2; 4]) -> (f32, f32) {
+    if bezier[3].x == bezier[0].x {
+        return (0.0, 1. / 3.);
+    }
+
+    let dx = bezier[3].x - bezier[0].x;
+    let weight = (bezier[3].x - bezier[2].x) / dx;
+    ((bezier[3].y - bezier[2].y) / (dx * weight), weight)
 }
