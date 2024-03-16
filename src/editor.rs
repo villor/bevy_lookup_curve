@@ -8,7 +8,9 @@ use egui::{
     emath, epaint::CubicBezierShape, Color32, Frame, Painter, Pos2, Rect, Sense, Shape, Stroke, Ui,
 };
 
-use crate::{asset::save_lookup_curve, Knot, KnotInterpolation, LookupCurve, TangentMode};
+use crate::{
+    asset::save_lookup_curve, Knot, KnotInterpolation, LookupCurve, TangentMode, TangentSide,
+};
 
 pub(crate) struct EditorPlugin;
 
@@ -400,13 +402,28 @@ impl LookupCurveEguiEditor {
                     Color32::LIGHT_GREEN,
                 ));
 
-                // right tangent
+                // tangents
                 const UNWEIGHTED_TANGENT_LEN: f32 = 60.;
-                if matches!(knot.interpolation, KnotInterpolation::Cubic) && next_knot.is_some() {
-                    let bezier = compute_bezier(knot, next_knot.unwrap());
+                let mut tangent_ui = |side: TangentSide| {
+                    let (tangent, bezier, dir) = match side {
+                        TangentSide::Left => (
+                            knot.left_tangent,
+                            compute_bezier(prev_knot.unwrap(), knot),
+                            -1.,
+                        ),
+                        TangentSide::Right => (
+                            knot.right_tangent,
+                            compute_bezier(knot, next_knot.unwrap()),
+                            1.,
+                        ),
+                    };
+                    let (endpoint, intermediate) = match side {
+                        TangentSide::Left => (bezier[3], bezier[2]),
+                        TangentSide::Right => (bezier[0], bezier[1]),
+                    };
                     let point_in_canvas = self.curve_to_canvas(knot.position)
                         + self
-                            .curve_to_canvas_vec(bezier[1] - knot.position)
+                            .curve_to_canvas_vec(intermediate - knot.position)
                             .normalized()
                             * UNWEIGHTED_TANGENT_LEN;
                     let point_in_screen = to_screen.transform_pos(point_in_canvas);
@@ -415,70 +432,54 @@ impl LookupCurveEguiEditor {
                         point_in_screen,
                         emath::Vec2::splat(2.0 * knot_radius),
                     );
-                    let interact_id = interact_id.with(0);
+                    let interact_id = interact_id.with(side);
                     let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
 
                     if interact_response.dragged_by(egui::PointerButton::Primary) {
-                        let mut c1 = self.canvas_to_curve(
+                        let mut c = self.canvas_to_curve(
                             to_canvas
                                 .transform_pos(interact_response.interact_pointer_pos().unwrap()),
                         );
 
                         // Unweighted x is always 1/3 of dx
-                        let x = (bezier[3].x - bezier[0].x) / 3.;
-                        let relative_c1 = c1 - bezier[0];
-                        c1 = bezier[0] + relative_c1 * (x / relative_c1.x);
+                        let x = (bezier[3].x - bezier[0].x) * dir / 3.;
+                        let relative_c = c - endpoint;
+                        c = endpoint + relative_c * (x / relative_c.x);
 
-                        let new_bezier = [bezier[0], c1, bezier[2], bezier[3]];
-                        let (new_slope, _) = slope_weight_from_bezier_out(&new_bezier);
-                        modified_knot = Some((i, knot.with_right_tangent_value(new_slope)));
+                        let (new_slope, _) =
+                            slope_weight_from_bezier(bezier[0], bezier[3], endpoint, c, dir);
+                        modified_knot = Some((i, knot.with_tangent_slope(side, new_slope)));
                     }
 
                     interact_response.context_menu(|ui| {
                         ui.label("Edit mode");
                         if ui
-                            .radio(matches!(knot.right_tangent.mode, TangentMode::Free), "Free")
+                            .radio(matches!(tangent.mode, TangentMode::Free), "Free")
                             .clicked()
                         {
-                            modified_knot = Some((
-                                i,
-                                Knot {
-                                    right_tangent: knot.right_tangent.with_mode(TangentMode::Free),
-                                    ..*knot
-                                },
-                            ));
+                            modified_knot =
+                                Some((i, knot.with_tangent_mode(side, TangentMode::Free)));
                             ui.close_menu();
                         }
                         if ui
-                            .radio(
-                                matches!(knot.right_tangent.mode, TangentMode::Aligned),
-                                "Aligned",
-                            )
+                            .radio(matches!(tangent.mode, TangentMode::Aligned), "Aligned")
                             .clicked()
                         {
-                            modified_knot = Some((
-                                i,
-                                Knot {
-                                    right_tangent: knot
-                                        .right_tangent
-                                        .with_mode(TangentMode::Aligned),
-                                    ..*knot
-                                },
-                            ));
+                            modified_knot =
+                                Some((i, knot.with_tangent_mode(side, TangentMode::Aligned)));
                             ui.close_menu();
                         }
 
-                        ui.label("Position");
                         ui.horizontal(|ui| {
-                            ui.label("value:");
+                            ui.label("Slope:");
                             ui.add(
                                 egui::DragValue::from_get_set(|v| match v {
                                     Some(v) => {
                                         modified_knot =
-                                            Some((i, knot.with_right_tangent_value(v as f32)));
+                                            Some((i, knot.with_tangent_slope(side, v as f32)));
                                         v
                                     }
-                                    _ => knot.right_tangent.value as f64,
+                                    _ => tangent.slope as f64,
                                 })
                                 .speed(0.001),
                             );
@@ -500,116 +501,18 @@ impl LookupCurveEguiEditor {
                         3.0,
                         Color32::LIGHT_GRAY,
                     ));
+                };
+
+                // right tangent
+                if matches!(knot.interpolation, KnotInterpolation::Cubic) && next_knot.is_some() {
+                    tangent_ui(TangentSide::Right);
                 }
 
                 // left tangent
                 if prev_knot.is_some()
                     && matches!(prev_knot.unwrap().interpolation, KnotInterpolation::Cubic)
                 {
-                    let bezier = compute_bezier(prev_knot.unwrap(), knot);
-                    let point_in_canvas = self.curve_to_canvas(knot.position)
-                        + self
-                            .curve_to_canvas_vec(bezier[2] - knot.position)
-                            .normalized()
-                            * UNWEIGHTED_TANGENT_LEN;
-                    let point_in_screen = to_screen.transform_pos(point_in_canvas);
-
-                    let interact_rect = Rect::from_center_size(
-                        point_in_screen,
-                        emath::Vec2::splat(2.0 * knot_radius),
-                    );
-                    let interact_id = interact_id.with(1);
-                    let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
-
-                    if interact_response.dragged_by(egui::PointerButton::Primary) {
-                        modified_knot = Some((
-                            i,
-                            knot.with_left_tangent_value(
-                                knot.left_tangent.value
-                                    + self.canvas_to_curve_vec(interact_response.drag_delta()).y,
-                            ),
-                        ));
-                    }
-                    if interact_response.dragged_by(egui::PointerButton::Primary) {
-                        let mut c2 = self.canvas_to_curve(
-                            to_canvas
-                                .transform_pos(interact_response.interact_pointer_pos().unwrap()),
-                        );
-
-                        // Unweighted x is always 1/3 of dx
-                        let x = (bezier[0].x - bezier[3].x) / 3.;
-                        let relative_c2 = c2 - bezier[3];
-                        c2 = bezier[3] + relative_c2 * (x / relative_c2.x);
-
-                        let new_bezier = [bezier[0], bezier[1], c2, bezier[3]];
-                        let (new_slope, _) = slope_weight_from_bezier_in(&new_bezier);
-                        modified_knot = Some((i, knot.with_left_tangent_value(new_slope)));
-                    }
-
-                    interact_response.context_menu(|ui| {
-                        ui.label("Edit mode");
-                        if ui
-                            .radio(matches!(knot.left_tangent.mode, TangentMode::Free), "Free")
-                            .clicked()
-                        {
-                            modified_knot = Some((
-                                i,
-                                Knot {
-                                    left_tangent: knot.left_tangent.with_mode(TangentMode::Free),
-                                    ..*knot
-                                },
-                            ));
-                            ui.close_menu();
-                        }
-                        if ui
-                            .radio(
-                                matches!(knot.left_tangent.mode, TangentMode::Aligned),
-                                "Aligned",
-                            )
-                            .clicked()
-                        {
-                            modified_knot = Some((
-                                i,
-                                Knot {
-                                    left_tangent: knot.left_tangent.with_mode(TangentMode::Aligned),
-                                    ..*knot
-                                },
-                            ));
-                            ui.close_menu();
-                        }
-
-                        ui.label("Position");
-                        ui.horizontal(|ui| {
-                            ui.label("value:");
-                            ui.add(
-                                egui::DragValue::from_get_set(|v| match v {
-                                    Some(v) => {
-                                        modified_knot =
-                                            Some((i, knot.with_left_tangent_value(v as f32)));
-                                        v
-                                    }
-                                    _ => knot.left_tangent.value as f64,
-                                })
-                                .speed(0.001),
-                            );
-                        });
-                    });
-
-                    painter.add(Shape::dashed_line(
-                        &[
-                            to_screen.transform_pos(self.curve_to_canvas(knot.position)),
-                            point_in_screen,
-                        ],
-                        Stroke::new(1.0, Color32::GRAY),
-                        4.0,
-                        2.0,
-                    ));
-
-                    painter.add(Shape::circle_filled(
-                        point_in_screen,
-                        3.0,
-                        Color32::LIGHT_GRAY,
-                    ));
+                    tangent_ui(TangentSide::Left);
                 }
             }
 
@@ -707,8 +610,8 @@ impl LookupCurveEguiEditor {
 
 #[inline]
 fn compute_bezier(knot_a: &Knot, knot_b: &Knot) -> [Vec2; 4] {
-    let slope_a = knot_a.right_tangent.value;
-    let slope_b = knot_b.left_tangent.value;
+    let slope_a = knot_a.right_tangent.slope;
+    let slope_b = knot_b.left_tangent.slope;
     let dx = knot_b.position.x - knot_a.position.x;
     [
         knot_a.position,
@@ -724,24 +627,18 @@ fn compute_bezier(knot_a: &Knot, knot_b: &Knot) -> [Vec2; 4] {
     ]
 }
 
-#[inline]
-fn slope_weight_from_bezier_out(bezier: &[Vec2; 4]) -> (f32, f32) {
-    if bezier[3].x == bezier[0].x {
+fn slope_weight_from_bezier(
+    c0: Vec2,
+    c3: Vec2,
+    endpoint: Vec2,
+    intermediate: Vec2,
+    dir: f32,
+) -> (f32, f32) {
+    if c3.x == c0.x {
         return (0.0, 1. / 3.);
     }
 
-    let dx = bezier[3].x - bezier[0].x;
-    let weight = (bezier[1].x - bezier[0].x) / dx;
-    ((bezier[1].y - bezier[0].y) / (dx * weight), weight)
-}
-
-#[inline]
-fn slope_weight_from_bezier_in(bezier: &[Vec2; 4]) -> (f32, f32) {
-    if bezier[3].x == bezier[0].x {
-        return (0.0, 1. / 3.);
-    }
-
-    let dx = bezier[3].x - bezier[0].x;
-    let weight = (bezier[3].x - bezier[2].x) / dx;
-    ((bezier[3].y - bezier[2].y) / (dx * weight), weight)
+    let dx = c3.x - c0.x;
+    let weight = (intermediate.x - endpoint.x) * dir / dx;
+    ((intermediate.y - endpoint.y) * dir / (dx * weight), weight)
 }

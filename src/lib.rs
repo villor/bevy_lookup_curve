@@ -33,35 +33,30 @@ pub enum TangentMode {
 /// Tangents are used to control Bezier interpolation for [Knot]s in a [LookupCurve]
 #[derive(Reflect, Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct Tangent {
-    pub value: f32,
+    pub slope: f32,
     pub mode: TangentMode,
 }
 
 impl Tangent {
     fn default_left() -> Self {
         Self {
-            value: 0.0,
+            slope: 0.0,
             ..Default::default()
         }
     }
 
     fn default_right() -> Self {
         Self {
-            value: 0.0,
+            slope: 0.0,
             ..Default::default()
         }
-    }
-
-    /// Returns a copy of self, with mode set to `mode`.
-    fn with_mode(&self, mode: TangentMode) -> Self {
-        Self { mode, ..*self }
     }
 }
 
 impl Default for Tangent {
     fn default() -> Self {
         Self {
-            value: 0.0,
+            slope: 0.0,
             mode: TangentMode::Aligned,
         }
     }
@@ -101,34 +96,41 @@ fn unique_knot_id() -> usize {
     KNOT_ID_COUNTER.fetch_add(1, Ordering::Relaxed)
 }
 
-impl Knot {
-    /// Returns a new knot copied from self, with the right tangent value set to `value`. This might also affect the left tangent depending on [`TangentMode`].
-    fn with_right_tangent_value(&self, value: f32) -> Self {
-        let mut knot = *self;
-        knot.right_tangent.value = value;
+#[derive(Copy, Clone, Hash)]
+enum TangentSide {
+    Left,
+    Right,
+}
 
-        if matches!(
+impl Knot {
+    /// Returns a new knot copied from self, with the tangent slope decided by `side` set to `slope`. This might also affect the other tangent depending on [`TangentMode`].
+    fn with_tangent_slope(&self, side: TangentSide, slope: f32) -> Self {
+        let mut knot = *self;
+
+        let aligned = matches!(
             (self.left_tangent.mode, self.right_tangent.mode),
             (TangentMode::Aligned, TangentMode::Aligned)
-        ) {
-            knot.left_tangent.value = value;
+        );
+
+        if matches!(side, TangentSide::Left) || aligned {
+            knot.left_tangent.slope = slope;
+        }
+        if matches!(side, TangentSide::Right) || aligned {
+            knot.right_tangent.slope = slope;
         }
 
         knot
     }
 
-    /// Returns a new knot copied from self, with the left tangent value set to `value`. This might also affect the right tangent depending on [`TangentMode`].
-    fn with_left_tangent_value(&self, value: f32) -> Self {
+    /// Returns a new knot copied from self, with the tangent mode decided by `side` set to `mode`.
+    fn with_tangent_mode(&self, side: TangentSide, mode: TangentMode) -> Self {
         let mut knot = *self;
-        knot.left_tangent.value = value;
-
-        if matches!(
-            (self.left_tangent.mode, self.right_tangent.mode),
-            (TangentMode::Aligned, TangentMode::Aligned)
-        ) {
-            knot.right_tangent.value = value;
+        if matches!(side, TangentSide::Left) {
+            knot.left_tangent.mode = mode;
         }
-
+        if matches!(side, TangentSide::Right) {
+            knot.right_tangent.mode = mode;
+        }
         knot
     }
 }
@@ -272,8 +274,8 @@ impl LookupCurve {
 fn unweighted_cubic_interp(knot_a: &Knot, knot_b: &Knot, x: f32) -> f32 {
     let x = (x - knot_a.position.x) / (knot_b.position.x - knot_a.position.x);
     let dx = knot_b.position.x - knot_a.position.x;
-    let m0 = knot_a.right_tangent.value * dx;
-    let m1 = knot_b.left_tangent.value * dx;
+    let m0 = knot_a.right_tangent.slope * dx;
+    let m1 = knot_b.left_tangent.slope * dx;
 
     let x2 = x * x;
     let x3 = x2 * x;
