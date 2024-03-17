@@ -262,7 +262,8 @@ impl LookupCurveEguiEditor {
                         }
                         KnotInterpolation::Cubic => {
                             painter.add(CubicBezierShape::from_points_stroke(
-                                compute_bezier(prev_knot, knot)
+                                prev_knot
+                                    .compute_bezier_to(knot)
                                     .map(|p| to_screen.transform_pos(self.curve_to_canvas(p))),
                                 false,
                                 Color32::TRANSPARENT,
@@ -408,12 +409,12 @@ impl LookupCurveEguiEditor {
                     let (tangent, bezier, dir) = match side {
                         TangentSide::Left => (
                             knot.left_tangent,
-                            compute_bezier(prev_knot.unwrap(), knot),
+                            prev_knot.unwrap().compute_bezier_to(knot),
                             -1.,
                         ),
                         TangentSide::Right => (
                             knot.right_tangent,
-                            compute_bezier(knot, next_knot.unwrap()),
+                            knot.compute_bezier_to(next_knot.unwrap()),
                             1.,
                         ),
                     };
@@ -606,25 +607,6 @@ impl LookupCurveEguiEditor {
             }
         }
     }
-}
-
-#[inline]
-fn compute_bezier(knot_a: &Knot, knot_b: &Knot) -> [Vec2; 4] {
-    let slope_a = knot_a.right_tangent.slope;
-    let slope_b = knot_b.left_tangent.slope;
-    let dx = knot_b.position.x - knot_a.position.x;
-    [
-        knot_a.position,
-        Vec2::new(
-            knot_a.position.x + (1. / 3.) * dx,
-            knot_a.position.y + (1. / 3.) * slope_a * dx,
-        ),
-        Vec2::new(
-            knot_b.position.x - (1. / 3.) * dx,
-            knot_b.position.y - (1. / 3.) * slope_b * dx,
-        ),
-        knot_b.position,
-    ]
 }
 
 fn slope_weight_from_bezier(

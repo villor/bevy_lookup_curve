@@ -35,6 +35,7 @@ pub enum TangentMode {
 pub struct Tangent {
     pub slope: f32,
     pub mode: TangentMode,
+    pub weight: Option<f32>,
 }
 
 impl Tangent {
@@ -58,6 +59,7 @@ impl Default for Tangent {
         Self {
             slope: 0.0,
             mode: TangentMode::Aligned,
+            weight: None,
         }
     }
 }
@@ -132,6 +134,27 @@ impl Knot {
             knot.right_tangent.mode = mode;
         }
         knot
+    }
+
+    #[inline]
+    fn compute_bezier_to(&self, knot_b: &Knot) -> [Vec2; 4] {
+        let slope_a = self.right_tangent.slope;
+        let weight_a = self.right_tangent.weight.unwrap_or(1. / 3.);
+        let slope_b = knot_b.left_tangent.slope;
+        let weight_b = knot_b.left_tangent.weight.unwrap_or(1. / 3.);
+        let dx = knot_b.position.x - self.position.x;
+        [
+            self.position,
+            Vec2::new(
+                self.position.x + weight_a * dx,
+                self.position.y + weight_a * slope_a * dx,
+            ),
+            Vec2::new(
+                knot_b.position.x - weight_b * dx,
+                knot_b.position.y - weight_b * slope_b * dx,
+            ),
+            knot_b.position,
+        ]
     }
 }
 
@@ -264,7 +287,11 @@ impl LookupCurve {
             }
             KnotInterpolation::Cubic => {
                 let knot_b = &self.knots[i + 1];
-                unweighted_cubic_interp(&knot_a, knot_b, x)
+                if knot_a.right_tangent.weight.is_some() || knot_b.left_tangent.weight.is_some() {
+                    weighted_cubic_interp(&knot_a, knot_b, x)
+                } else {
+                    unweighted_cubic_interp(&knot_a, knot_b, x)
+                }
             }
         }
     }
@@ -286,4 +313,81 @@ fn unweighted_cubic_interp(knot_a: &Knot, knot_b: &Knot, x: f32) -> f32 {
     let d = -2. * x3 + 3. * x2;
 
     a * knot_a.position.y + b * m0 + c * m1 + d * knot_b.position.y
+}
+
+#[inline]
+fn weighted_cubic_interp(knot_a: &Knot, knot_b: &Knot, x: f32) -> f32 {
+    // TODO: optimize
+    CubicSegment::from_bezier_points(knot_a.compute_bezier_to(knot_b)).find_y_given_x(x, 1e-5, 8)
+}
+
+/// Mostly a copy of code from https://github.com/bevyengine/bevy/blob/main/crates/bevy_math/src/cubic_splines.rs
+///
+/// Copied because the cubic_splines module does not exactly fit the API we need:
+/// 1. Allow constructing a single CubicSegment from bezier points (without allocating a CubicCurve, and without restricting c0 and c1 to 0 and 1)
+/// 2. find_y_given_x needs to be accessible
+/// 3. max_iters and max_error should be configurable
+#[derive(Clone, Debug, Default, PartialEq)]
+struct CubicSegment {
+    coeff: [Vec2; 4],
+}
+
+impl CubicSegment {
+    /// Instantaneous position of a point at parametric value `t`.
+    #[inline]
+    fn position(&self, t: f32) -> Vec2 {
+        let [a, b, c, d] = self.coeff;
+        a + b * t + c * t.powi(2) + d * t.powi(3)
+    }
+
+    /// Instantaneous velocity of a point at parametric value `t`.
+    #[inline]
+    fn velocity(&self, t: f32) -> Vec2 {
+        let [_, b, c, d] = self.coeff;
+        b + c * 2.0 * t + d * 3.0 * t.powi(2)
+    }
+
+    #[inline]
+    fn find_y_given_x(&self, x: f32, max_error: f32, max_iters: u8) -> f32 {
+        let mut t_guess = x;
+        let mut pos_guess = Vec2::ZERO;
+        for _ in 0..max_iters {
+            pos_guess = self.position(t_guess);
+            let error = pos_guess.x - x;
+            if error.abs() <= max_error {
+                break;
+            }
+            // Using Newton's method, use the tangent line to estimate a better guess value.
+            let slope = self.velocity(t_guess).x; // dx/dt
+            t_guess -= error / slope;
+        }
+        pos_guess.y
+    }
+
+    #[inline]
+    fn from_bezier_points(control_points: [Vec2; 4]) -> CubicSegment {
+        let char_matrix = [
+            [1., 0., 0., 0.],
+            [-3., 3., 0., 0.],
+            [3., -6., 3., 0.],
+            [-1., 3., -3., 1.],
+        ];
+
+        Self::coefficients(control_points, 1.0, char_matrix)
+    }
+
+    #[inline]
+    fn coefficients(p: [Vec2; 4], multiplier: f32, char_matrix: [[f32; 4]; 4]) -> CubicSegment {
+        let [c0, c1, c2, c3] = char_matrix;
+        // These are the polynomial coefficients, computed by multiplying the characteristic
+        // matrix by the point matrix.
+        let mut coeff = [
+            p[0] * c0[0] + p[1] * c0[1] + p[2] * c0[2] + p[3] * c0[3],
+            p[0] * c1[0] + p[1] * c1[1] + p[2] * c1[2] + p[3] * c1[3],
+            p[0] * c2[0] + p[1] * c2[1] + p[2] * c2[2] + p[3] * c2[3],
+            p[0] * c3[0] + p[1] * c3[1] + p[2] * c3[2] + p[3] * c3[3],
+        ];
+        coeff.iter_mut().for_each(|c| *c *= multiplier);
+        CubicSegment { coeff }
+    }
 }
