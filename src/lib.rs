@@ -127,11 +127,20 @@ impl Knot {
     /// Returns a new knot copied from self, with the tangent mode decided by `side` set to `mode`.
     fn with_tangent_mode(&self, side: TangentSide, mode: TangentMode) -> Self {
         let mut knot = *self;
-        if matches!(side, TangentSide::Left) {
-            knot.left_tangent.mode = mode;
+        match side {
+            TangentSide::Left => knot.left_tangent.mode = mode,
+            TangentSide::Right => knot.right_tangent.mode = mode,
         }
-        if matches!(side, TangentSide::Right) {
-            knot.right_tangent.mode = mode;
+        knot
+    }
+
+    /// Returns a new knot copied from self, with the tangent weight decided by `side` set to `weight`. Weights will be clamped between 0 and 1.
+    fn with_tangent_weight(&self, side: TangentSide, weight: Option<f32>) -> Self {
+        let mut knot = *self;
+        let weight = weight.map(|w| w.clamp(0.0, 1.0));
+        match side {
+            TangentSide::Left => knot.left_tangent.weight = weight,
+            TangentSide::Right => knot.right_tangent.weight = weight,
         }
         knot
     }
