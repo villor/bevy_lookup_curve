@@ -422,11 +422,16 @@ impl LookupCurveEguiEditor {
                         TangentSide::Left => (bezier[3], bezier[2]),
                         TangentSide::Right => (bezier[0], bezier[1]),
                     };
-                    let point_in_canvas = self.curve_to_canvas(knot.position)
-                        + self
-                            .curve_to_canvas_vec(intermediate - knot.position)
-                            .normalized()
-                            * UNWEIGHTED_TANGENT_LEN;
+                    let point_in_canvas = if tangent.weight.is_some() {
+                        self.curve_to_canvas(intermediate)
+                    } else {
+                        self.curve_to_canvas(knot.position)
+                            + self
+                                .curve_to_canvas_vec(intermediate - knot.position)
+                                .normalized()
+                                * UNWEIGHTED_TANGENT_LEN
+                    };
+
                     let point_in_screen = to_screen.transform_pos(point_in_canvas);
 
                     let interact_rect = Rect::from_center_size(
@@ -442,14 +447,22 @@ impl LookupCurveEguiEditor {
                                 .transform_pos(interact_response.interact_pointer_pos().unwrap()),
                         );
 
-                        // Unweighted x is always 1/3 of dx
-                        let x = (bezier[3].x - bezier[0].x) * dir / 3.;
-                        let relative_c = c - endpoint;
-                        c = endpoint + relative_c * (x / relative_c.x);
+                        if tangent.weight.is_none() {
+                            // Unweighted x is always 1/3 of dx
+                            let x = (bezier[3].x - bezier[0].x) * dir / 3.;
+                            let relative_c = c - endpoint;
+                            c = endpoint + relative_c * (x / relative_c.x);
+                        };
 
-                        let (new_slope, _) =
+                        let (new_slope, new_weight) =
                             slope_weight_from_bezier(bezier[0], bezier[3], endpoint, c, dir);
-                        modified_knot = Some((i, knot.with_tangent_slope(side, new_slope)));
+
+                        let mut knot = knot.with_tangent_slope(side, new_slope);
+                        if tangent.weight.is_some() {
+                            knot = knot.with_tangent_weight(side, Some(new_weight));
+                        }
+
+                        modified_knot = Some((i, knot));
                     }
 
                     interact_response.context_menu(|ui| {
@@ -471,20 +484,47 @@ impl LookupCurveEguiEditor {
                             ui.close_menu();
                         }
 
-                        ui.horizontal(|ui| {
-                            ui.label("Slope:");
-                            ui.add(
-                                egui::DragValue::from_get_set(|v| match v {
-                                    Some(v) => {
-                                        modified_knot =
-                                            Some((i, knot.with_tangent_slope(side, v as f32)));
-                                        v
-                                    }
-                                    _ => tangent.slope as f64,
-                                })
-                                .speed(0.001),
-                            );
-                        });
+                        ui.label("Slope:");
+                        ui.add(
+                            egui::DragValue::from_get_set(|v| match v {
+                                Some(v) => {
+                                    modified_knot =
+                                        Some((i, knot.with_tangent_slope(side, v as f32)));
+                                    v
+                                }
+                                _ => tangent.slope as f64,
+                            })
+                            .speed(0.001),
+                        );
+
+                        let mut weighted = tangent.weight.is_some();
+                        if ui.checkbox(&mut weighted, "Weighted").changed() {
+                            if weighted && tangent.weight.is_none() {
+                                modified_knot =
+                                    Some((i, knot.with_tangent_weight(side, Some(1. / 3.))));
+                            } else if !weighted {
+                                modified_knot = Some((i, knot.with_tangent_weight(side, None)));
+                            }
+                        };
+
+                        if tangent.weight.is_some() {
+                            ui.horizontal(|ui| {
+                                ui.label("Weight:");
+                                ui.add(
+                                    egui::DragValue::from_get_set(|v| match v {
+                                        Some(v) => {
+                                            modified_knot = Some((
+                                                i,
+                                                knot.with_tangent_weight(side, Some(v as f32)),
+                                            ));
+                                            v
+                                        }
+                                        _ => tangent.weight.unwrap() as f64,
+                                    })
+                                    .speed(0.001),
+                                );
+                            });
+                        }
                     });
 
                     painter.add(Shape::dashed_line(
