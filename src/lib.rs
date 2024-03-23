@@ -269,8 +269,8 @@ impl LookupCurve {
         self.knots.remove(i);
     }
 
-    /// Evaluate the curve to get the y for a given x
-    pub fn find_y_given_x(&self, x: f32) -> f32 {
+    /// Sample the curve to get the y for a given x
+    pub fn sample(&self, x: f32) -> f32 {
         // Return repeated constant values outside of knot range
         if self.knots.is_empty() {
             return 0.0;

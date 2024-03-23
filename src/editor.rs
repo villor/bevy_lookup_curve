@@ -569,7 +569,7 @@ impl LookupCurveEguiEditor {
             if let Some(sample) = sample {
                 painter.add(Shape::circle_filled(
                     to_screen.transform_pos(
-                        self.curve_to_canvas(Vec2::new(sample, curve.find_y_given_x(sample))),
+                        self.curve_to_canvas(Vec2::new(sample, curve.sample(sample))),
                     ),
                     3.0,
                     Color32::RED,
