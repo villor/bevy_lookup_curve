@@ -82,7 +82,7 @@ fn update(
 
         // animate sprite
         transform.translation.x =
-            animate.from + (animate.to - animate.from) * animate_curve.0.find_y_given_x(animate.t);
+            animate.from + (animate.to - animate.from) * animate_curve.0.sample(animate.t);
 
         // draw editor
         editor.0.ui_window(

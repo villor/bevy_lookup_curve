@@ -20,7 +20,7 @@ pub fn linear(c: &mut Criterion) {
     c.bench_function("0_1_linear_1000", |b| {
         b.iter(|| {
             (0..1000).map(|i| i as f32 / 1000.0).for_each(|x| {
-                curve.find_y_given_x(black_box(x));
+                curve.sample(black_box(x));
             })
         })
     });
@@ -42,7 +42,7 @@ pub fn unweighted_cubic(c: &mut Criterion) {
     c.bench_function("0_1_unweighted_cubic_1000", |b| {
         b.iter(|| {
             (0..1000).map(|i| i as f32 / 1000.0).for_each(|x| {
-                curve.find_y_given_x(black_box(x));
+                curve.sample(black_box(x));
             })
         })
     });
@@ -71,7 +71,7 @@ pub fn weighted_cubic(c: &mut Criterion) {
     c.bench_function("0_1_weighted_cubic_1000", |b| {
         b.iter(|| {
             (0..1000).map(|i| i as f32 / 1000.0).for_each(|x| {
-                curve.find_y_given_x(black_box(x));
+                curve.sample(black_box(x));
             })
         })
     });
@@ -145,7 +145,7 @@ pub fn knot_search(c: &mut Criterion) {
     c.bench_function("sweep_no_cache_1000", |b| {
         b.iter(|| {
             sweep_samples.iter().for_each(|x| {
-                curve.find_y_given_x(black_box(*x));
+                curve.sample(black_box(*x));
             })
         })
     });
@@ -156,7 +156,7 @@ pub fn knot_search(c: &mut Criterion) {
     c.bench_function("random_no_cache_1000", |b| {
         b.iter(|| {
             random_samples.iter().for_each(|x| {
-                curve.find_y_given_x(black_box(*x));
+                curve.sample(black_box(*x));
             })
         })
     });
