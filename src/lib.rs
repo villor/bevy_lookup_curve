@@ -8,6 +8,9 @@ use bevy_reflect::Reflect;
 
 pub mod asset;
 pub mod editor;
+pub mod knot_search;
+
+use knot_search::KnotSearch;
 
 /// Registers the asset loader and editor components
 pub struct LookupCurvePlugin;
@@ -185,6 +188,17 @@ pub struct LookupCurve {
     knots: Vec<Knot>,
 }
 
+#[derive(Reflect, Debug, Clone, Default)]
+pub struct LookupCache {
+    last_knot_index: Option<usize>,
+}
+
+impl LookupCache {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
 impl LookupCurve {
     pub fn new(mut knots: Vec<Knot>) -> Self {
         knots.sort_by(|a, b| {
@@ -270,7 +284,19 @@ impl LookupCurve {
     }
 
     /// Sample the curve to get the y for a given x
-    pub fn sample(&self, x: f32) -> f32 {
+    #[inline]
+    pub fn lookup(&self, x: f32) -> f32 {
+        self.lookup_internal(x, None)
+    }
+
+    /// Sample the curve with a LookupCache. Can speed up coherent lookups, but might slow down random lookups.
+    #[inline]
+    pub fn lookup_cached(&self, x: f32, cache: &mut LookupCache) -> f32 {
+        self.lookup_internal(x, Some(cache))
+    }
+
+    #[inline]
+    fn lookup_internal(&self, x: f32, cache: Option<&mut LookupCache>) -> f32 {
         // Return repeated constant values outside of knot range
         if self.knots.is_empty() {
             return 0.0;
@@ -283,7 +309,12 @@ impl LookupCurve {
         }
 
         // Find left knot
-        let i = self.knots.partition_point(|knot| knot.position.x < x) - 1;
+        let i = if let Some(cache) = cache {
+            self.knots
+                .search_knots_with_cache(x, &mut cache.last_knot_index)
+        } else {
+            self.knots.search_knots(x)
+        };
         let knot_a = self.knots[i];
 
         // Interpolate

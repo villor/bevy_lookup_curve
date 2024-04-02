@@ -1,7 +1,9 @@
 use bevy::prelude::*;
 use bevy_egui::{EguiContexts, EguiPlugin};
 
-use bevy_lookup_curve::{editor::LookupCurveEguiEditor, Knot, KnotInterpolation, LookupCurve};
+use bevy_lookup_curve::{
+    editor::LookupCurveEguiEditor, Knot, KnotInterpolation, LookupCache, LookupCurve,
+};
 
 fn main() {
     App::new()
@@ -23,6 +25,9 @@ struct AnimateX {
 
 #[derive(Component)]
 struct AnimateWithCurve(LookupCurve);
+
+#[derive(Component)]
+struct AnimationCache(LookupCache);
 
 #[derive(Component)]
 struct EditorWindow(LookupCurveEguiEditor);
@@ -54,6 +59,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                 ..default()
             },
         ])),
+        AnimationCache(LookupCache::new()),
         EditorWindow(LookupCurveEguiEditor::default()),
     ));
 }
@@ -63,12 +69,13 @@ fn update(
         &mut Transform,
         &mut AnimateX,
         &mut AnimateWithCurve,
+        &mut AnimationCache,
         &mut EditorWindow,
     )>,
     mut contexts: EguiContexts,
     time: Res<Time>,
 ) {
-    for (mut transform, mut animate, mut animate_curve, mut editor) in animate.iter_mut() {
+    for (mut transform, mut animate, mut curve, mut cache, mut editor) in animate.iter_mut() {
         // update t
         animate.t += animate.dir * animate.speed * time.delta_seconds();
         if animate.t >= 1.0 {
@@ -81,14 +88,14 @@ fn update(
         }
 
         // animate sprite
-        transform.translation.x =
-            animate.from + (animate.to - animate.from) * animate_curve.0.sample(animate.t);
+        transform.translation.x = animate.from
+            + (animate.to - animate.from) * curve.0.lookup_cached(animate.t, &mut cache.0);
 
         // draw editor
         editor.0.ui_window(
             contexts.ctx_mut(),
             "Lookup curve",
-            &mut animate_curve.0,
+            &mut curve.0,
             Some(animate.t),
         );
     }

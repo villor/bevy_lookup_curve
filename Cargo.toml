@@ -39,6 +39,12 @@ bevy-inspector-egui = { version = "0.23.1", default-features = false }
 criterion = "0.5.1"
 rand = "0.8.5"
 
+# [[bench]]
+# name = "lookup_curve"
+# path = "benches/lookup_curve.rs"
+# harness = false
+
 [[bench]]
-name = "lookup_curve"
+name = "knot_search"
+path = "benches/knot_search.rs"
 harness = false
