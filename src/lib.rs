@@ -33,7 +33,7 @@ pub enum TangentMode {
     Aligned,
 }
 
-/// Tangents are used to control Bezier interpolation for [Knot]s in a [LookupCurve]
+/// Tangents are used to control cubic interpolation for [Knot]s in a [LookupCurve]
 #[derive(Reflect, Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct Tangent {
     pub slope: f32,
@@ -84,9 +84,9 @@ pub struct Knot {
     /// Interpolation used between this and the next knot
     pub interpolation: KnotInterpolation,
 
-    /// Left tangent relative to knot position. x above 0 will be clamped to 0
+    /// Left tangent defining in slope and weight
     pub left_tangent: Tangent,
-    /// Right tangent relative to knot position. x below 0 will be clamped to 0
+    /// Right tangent defining out slope and weight
     pub right_tangent: Tangent,
 
     /// Identifier used by editor operations because index might change during modification
@@ -283,13 +283,13 @@ impl LookupCurve {
         self.knots.remove(i);
     }
 
-    /// Sample the curve to get the y for a given x
+    /// Find y for given x on the curve
     #[inline]
     pub fn lookup(&self, x: f32) -> f32 {
         self.lookup_internal(x, None)
     }
 
-    /// Sample the curve with a LookupCache. Can speed up coherent lookups, but might slow down random lookups.
+    /// Find y for given x on the curve, with a LookupCache. Can speed up coherent lookups, but might slow down random lookups.
     #[inline]
     pub fn lookup_cached(&self, x: f32, cache: &mut LookupCache) -> f32 {
         self.lookup_internal(x, Some(cache))
@@ -357,7 +357,6 @@ fn unweighted_cubic_interp(knot_a: &Knot, knot_b: &Knot, x: f32) -> f32 {
 
 #[inline]
 fn weighted_cubic_interp(knot_a: &Knot, knot_b: &Knot, x: f32) -> f32 {
-    // TODO: optimize
     CubicSegment::from_bezier_points(knot_a.compute_bezier_to(knot_b)).find_y_given_x(x, 1e-5, 8)
 }
 
