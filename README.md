@@ -5,7 +5,7 @@ Editable lookup curve for Bevy that can be used for animations or other gameplay
 If you have used AnimationCurve in Unity, this would be an attempt at something similar for Bevy.
 
 ## Features
-* LookupCurve type with modifiable knots and tangents. Three types of interpolation: Constant, Linear, and Bezier
+* LookupCurve type with modifiable knots and tangents. Three types of interpolation: Constant, Linear, and Cubic
 * Egui based editor
 * Asset loader and save functionality 
 
