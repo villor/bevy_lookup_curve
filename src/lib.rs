@@ -182,12 +182,6 @@ impl Default for Knot {
     }
 }
 
-/// Two-dimensional spline that only allows a single y-value per x-value
-#[derive(Asset, Debug, Reflect, Serialize, Deserialize)]
-pub struct LookupCurve {
-    knots: Vec<Knot>,
-}
-
 #[derive(Reflect, Debug, Clone, Default)]
 pub struct LookupCache {
     last_knot_index: Option<usize>,
@@ -196,6 +190,36 @@ pub struct LookupCache {
 impl LookupCache {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+
+const fn max_iters_default() -> u8 {
+    20
+}
+const fn max_error_default() -> f32 {
+    1e-5
+}
+
+/// Two-dimensional spline that only allows a single y-value per x-value
+#[derive(Asset, Debug, Reflect, Serialize, Deserialize)]
+pub struct LookupCurve {
+    knots: Vec<Knot>,
+
+    /// Max number of iterations used for Newton-Rhapson iteration in weighted cubic segments
+    #[serde(default = "max_iters_default")]
+    pub max_iters: u8,
+    /// Max error allowed before breaking Newton-Rhapson iteration in weighted cubic segments
+    #[serde(default = "max_error_default")]
+    pub max_error: f32,
+}
+
+impl Default for LookupCurve {
+    fn default() -> Self {
+        Self {
+            knots: vec![],
+            max_iters: max_iters_default(),
+            max_error: max_error_default(),
+        }
     }
 }
 
@@ -208,7 +232,22 @@ impl LookupCurve {
                 .expect("NaN is not allowed")
         });
 
-        Self { knots }
+        Self {
+            knots,
+            ..Default::default()
+        }
+    }
+
+    /// Consumes the curve and returns it with max_iters set to the new value
+    pub fn with_max_iters(mut self, max_iters: u8) -> Self {
+        self.max_iters = max_iters;
+        self
+    }
+
+    /// Consumes the curve and returns it with max_errors set to the new value
+    pub fn with_max_error(mut self, max_error: f32) -> Self {
+        self.max_error = max_error;
+        self
     }
 
     /// Returns the knots in the curve as a slice
@@ -328,7 +367,7 @@ impl LookupCurve {
             KnotInterpolation::Cubic => {
                 let knot_b = &self.knots[i + 1];
                 if knot_a.right_tangent.weight.is_some() || knot_b.left_tangent.weight.is_some() {
-                    weighted_cubic_interp(&knot_a, knot_b, x)
+                    weighted_cubic_interp(&knot_a, knot_b, x, self.max_error, self.max_iters)
                 } else {
                     unweighted_cubic_interp(&knot_a, knot_b, x)
                 }
@@ -356,8 +395,15 @@ fn unweighted_cubic_interp(knot_a: &Knot, knot_b: &Knot, x: f32) -> f32 {
 }
 
 #[inline]
-fn weighted_cubic_interp(knot_a: &Knot, knot_b: &Knot, x: f32) -> f32 {
-    CubicSegment::from_bezier_points(knot_a.compute_bezier_to(knot_b)).find_y_given_x(x, 1e-5, 8)
+fn weighted_cubic_interp(
+    knot_a: &Knot,
+    knot_b: &Knot,
+    x: f32,
+    max_error: f32,
+    max_iters: u8,
+) -> f32 {
+    CubicSegment::from_bezier_points(knot_a.compute_bezier_to(knot_b))
+        .find_y_given_x(x, max_error, max_iters)
 }
 
 /// Mostly a copy of code from https://github.com/bevyengine/bevy/blob/main/crates/bevy_math/src/cubic_splines.rs
