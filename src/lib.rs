@@ -202,7 +202,7 @@ const fn max_error_default() -> f32 {
 }
 
 /// Two-dimensional spline that only allows a single y-value per x-value
-#[derive(Asset, Debug, Reflect, Serialize, Deserialize)]
+#[derive(Asset, Clone, Debug, Reflect, Serialize, Deserialize)]
 pub struct LookupCurve {
     knots: Vec<Knot>,
 
