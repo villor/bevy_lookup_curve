@@ -183,6 +183,7 @@ impl Default for Knot {
     }
 }
 
+/// Cache to speed up coherent lookups, see [LookupCurve::lookup_cached]
 #[derive(Reflect, Debug, Clone, Default)]
 pub struct LookupCache {
     last_knot_index: Option<usize>,
