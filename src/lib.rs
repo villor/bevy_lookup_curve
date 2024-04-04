@@ -93,6 +93,7 @@ pub struct Knot {
     ///
     /// There should not be any need to change this as it will be set internally.
     #[serde(skip_serializing, default = "unique_knot_id")]
+    #[reflect(skip_serializing, default = "unique_knot_id")]
     pub id: usize,
 }
 
@@ -207,9 +208,11 @@ pub struct LookupCurve {
 
     /// Max number of iterations used for Newton-Rhapson iteration in weighted cubic segments
     #[serde(default = "max_iters_default")]
+    #[reflect(default = "max_iters_default")]
     pub max_iters: u8,
     /// Max error allowed before breaking Newton-Rhapson iteration in weighted cubic segments
     #[serde(default = "max_error_default")]
+    #[reflect(default = "max_error_default")]
     pub max_error: f32,
 }
 
