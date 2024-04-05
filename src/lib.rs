@@ -10,6 +10,9 @@ pub mod asset;
 pub mod editor;
 pub mod knot_search;
 
+//#[cfg(feature = "inspector-egui")]
+mod inspector;
+
 use knot_search::KnotSearch;
 
 /// Registers the asset loader and editor components
@@ -19,6 +22,8 @@ impl Plugin for LookupCurvePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(asset::AssetPlugin);
         app.add_plugins(editor::EditorPlugin);
+        //#[cfg(feature = "inspector-egui")]
+        app.add_plugins(inspector::InspectorPlugin);
     }
 }
 
