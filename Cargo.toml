@@ -27,7 +27,7 @@ serde = "1.0"
 
 # egui editor
 egui = "0.26"
-bevy_egui = "0.26"
+bevy_egui = "0.25"
 
 # egui inspector
 # bevy_app = "0.10"
