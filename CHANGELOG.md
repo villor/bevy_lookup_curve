@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.1] - 05-Apr-2024
+
+### Changed
+- Downgraded `bevy_egui` to 0.25 to fix problems with `bevy-inspector-egui`. Waiting for `bevy_egui` 0.27 instead, which should be supported by `bevy-inspector-egui`.
+
 ## [0.2.0] - 04-Apr-2024
 
 This release has multiple breaking changes within the `LookupCurve` struct. If you have previously saved curves, you will need to make new ones using the new version.
