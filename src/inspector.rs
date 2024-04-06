@@ -22,7 +22,7 @@ impl Plugin for InspectorPlugin {
             many_unimplemented,
         );
 
-        //type_registry.register::<Handle<LookupCurve>>();
+        type_registry.register::<Handle<LookupCurve>>();
         add_raw::<Handle<LookupCurve>>(
             &mut type_registry,
             lookup_curve_handle_ui,
@@ -150,31 +150,40 @@ fn lookup_curve_handle_ui_readonly(
 }
 
 fn lookup_curve_miniature(curve: &LookupCurve, id: egui::Id, ui: &mut egui::Ui) {
-    // let computed_curve = curve.bezier.to_curve();
-
-    let points = if curve.knots().len() < 2 {
-        egui_plot::PlotPoints::from_iter(std::iter::empty())
-    } else {
-        const SAMPLE_COUNT: i32 = 100;
-        let min_x = curve.knots().first().unwrap().position.x;
-        let max_x = curve.knots().last().unwrap().position.x;
-        let length = max_x - min_x;
-        let mut cache = LookupCache::new();
-        egui_plot::PlotPoints::from_iter(
-            (0..SAMPLE_COUNT)
-                .map(|i| min_x + (i as f32 * length / SAMPLE_COUNT as f32))
-                .map(|x| [x as f64, curve.lookup_cached(x, &mut cache) as f64]),
-        )
-    };
-
-    let line = egui_plot::Line::new(points);
-    egui_plot::Plot::new(id)
+    let rect = ui.available_rect_before_wrap();
+    let response = egui_plot::Plot::new(id)
         .allow_drag(false)
         .allow_scroll(false)
         .allow_zoom(false)
         .allow_boxed_zoom(false)
+        .allow_double_click_reset(false)
         .show_axes([false, false])
+        .show_grid([false, false])
+        .show_y(false)
+        .show_x(false)
+        .width(rect.width())
+        .height(rect.height())
         .show(ui, |plot_ui| {
+            let points = if curve.knots().len() < 2 {
+                egui_plot::PlotPoints::from_iter(std::iter::empty())
+            } else {
+                const SAMPLE_COUNT: i32 = 50;
+                let min_x = curve.knots().first().unwrap().position.x;
+                let max_x = curve.knots().last().unwrap().position.x;
+                let length = max_x - min_x;
+                let mut cache = LookupCache::new();
+                egui_plot::PlotPoints::from_iter(
+                    (0..SAMPLE_COUNT)
+                        .map(|i| min_x + (i as f32 * length / SAMPLE_COUNT as f32))
+                        .map(|x| [x as f64, curve.lookup_cached(x, &mut cache) as f64]),
+                )
+            };
+
+            let line = egui_plot::Line::new(points).color(egui::Color32::GREEN);
             plot_ui.line(line);
         });
+
+    if response.response.clicked() {
+        // TODO: Open editor
+    }
 }
