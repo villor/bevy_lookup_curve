@@ -1,9 +1,16 @@
 use bevy_app::{App, Plugin, Update};
 use bevy_asset::{Assets, Handle};
-use bevy_ecs::prelude::{Component, Query, ResMut};
-use bevy_egui::{EguiContexts, EguiPlugin};
+use bevy_ecs::{
+    component::ComponentId,
+    entity::Entity,
+    prelude::Component,
+    reflect::AppTypeRegistry,
+    system::{Query, ResMut, SystemState},
+    world::World,
+};
+use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_math::Vec2;
-use bevy_reflect::Reflect;
+use bevy_reflect::{GetPath, Reflect, ReflectFromPtr};
 use egui::{
     emath, epaint::CubicBezierShape, Color32, Frame, Painter, Pos2, Rect, Sense, Shape, Stroke, Ui,
 };
@@ -20,7 +27,19 @@ impl Plugin for EditorPlugin {
             app.add_plugins(EguiPlugin);
         }
         app.add_systems(Update, lookup_curve_editor_ui);
+
+        let type_registry = app.world.resource::<bevy_ecs::prelude::AppTypeRegistry>();
+        let mut type_registry = type_registry.write();
+        type_registry.register::<LookupCurve>();
     }
+}
+
+/// References a [LookupCurve] somewhere in the ECS. Used to tie an editor window to a [LookupCurve].
+#[derive(Reflect, Clone)]
+pub enum CurveRef {
+    ComponentField(Entity, ComponentId, &'static str),
+    ResourceField(ComponentId, &'static str),
+    Asset(Handle<LookupCurve>),
 }
 
 #[derive(Component, Reflect)]
@@ -29,46 +48,115 @@ impl Plugin for EditorPlugin {
 /// Holds a `curve_handle` to the loaded lookup curve asset
 pub struct LookupCurveEditor {
     pub title: String,
-    pub curve_handle: Handle<LookupCurve>,
+    pub curve_ref: CurveRef,
     pub egui_editor: LookupCurveEguiEditor,
     pub sample: Option<f32>,
 }
 
 impl LookupCurveEditor {
-    /// Constructs a [LookupCurveEditor] with the supplied `curve_handle`.
-    pub fn new(curve_handle: Handle<LookupCurve>) -> Self {
+    pub fn new_from_component(
+        entity: Entity,
+        component_id: ComponentId,
+        path: &'static str,
+    ) -> Self {
+        // TODO: cleanup
         Self {
             title: "Lookup curve".to_string(),
-            curve_handle,
+            curve_ref: CurveRef::ComponentField(entity, component_id, path),
             egui_editor: LookupCurveEguiEditor::default(),
             sample: None,
         }
     }
 
-    /// Constructs a [LookupCurveEditor] with the supplied `curve_handle` and `path` as save path.
-    pub fn with_save_path(curve_handle: Handle<LookupCurve>, path: String) -> Self {
+    pub fn new_with_handle(curve_handle: Handle<LookupCurve>) -> Self {
         Self {
-            egui_editor: LookupCurveEguiEditor {
-                ron_path: Some(path),
-                ..Default::default()
-            },
-            ..LookupCurveEditor::new(curve_handle)
+            title: "Lookup curve".to_string(),
+            curve_ref: CurveRef::Asset(curve_handle),
+            egui_editor: LookupCurveEguiEditor::default(),
+            sample: None,
         }
+    }
+
+    pub fn title(mut self, title: String) -> Self {
+        self.title = title;
+        self
+    }
+
+    pub fn save_path(mut self, path: String) -> Self {
+        self.egui_editor.ron_path = Some(path);
+        self
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn lookup_curve_editor_ui(
-    mut editors: Query<&mut LookupCurveEditor>,
-    mut contexts: EguiContexts,
-    mut curves: ResMut<Assets<LookupCurve>>,
+    world: &mut World,
+    params: &mut SystemState<(
+        Query<(Entity, &mut LookupCurveEditor)>,
+        Query<(Entity, &mut EguiContext)>,
+        ResMut<Assets<LookupCurve>>,
+    )>,
 ) {
-    for mut editor in &mut editors {
-        if let Some(curve) = curves.get_mut(&editor.curve_handle) {
-            let sample = editor.sample;
-            let title = editor.title.clone();
-            editor
-                .egui_editor
-                .ui_window(contexts.ctx_mut(), title.as_str(), curve, sample);
+    let context: Entity = {
+        let (_, contexts, _) = params.get_mut(world);
+        let (entity, _) = contexts.single();
+        entity
+    };
+    let curves: Vec<(Entity, CurveRef)> = {
+        let (editors, _, _) = params.get_mut(world);
+        editors
+            .iter()
+            .map(|(entity, editor)| (entity, editor.curve_ref.clone()))
+            .collect()
+    };
+    for (editor, curve) in curves {
+        match curve {
+            CurveRef::ComponentField(entity, component_id, path) => {
+                let type_registry = world.resource::<AppTypeRegistry>().0.clone();
+                let type_registry = type_registry.read();
+                let type_id = world
+                    .components()
+                    .get_info(component_id)
+                    .unwrap()
+                    .type_id()
+                    .unwrap();
+                let type_registration = type_registry.get(type_id).unwrap();
+                let reflect_from_ptr = type_registration.data::<ReflectFromPtr>().unwrap();
+
+                // we assume `EguiContext`, `LookupCurveEditor`, and `LookupCurve` are invariant ie can never exist on the same entity together
+                let [mut context, mut editor, mut entity] =
+                    world.many_entities_mut([context, editor, entity]);
+
+                let component = entity.get_mut_by_id(component_id).unwrap();
+                // SAFETY: We used the `ComponentId` to get the `TypeId` and the `ReflectFromPtr`, then used the very same `ComponentId` to get the pointer, so we know it is correct
+                let mut component =
+                    component.map_unchanged(|ptr| unsafe { reflect_from_ptr.as_reflect_mut(ptr) });
+                let curve = component.path_mut::<LookupCurve>(path).unwrap();
+
+                let mut context = context.get_mut::<EguiContext>().unwrap();
+                let mut editor = editor.get_mut::<LookupCurveEditor>().unwrap();
+
+                let sample = editor.sample;
+                let title = editor.title.clone();
+                editor
+                    .egui_editor
+                    .ui_window(context.get_mut(), title.as_str(), curve, sample);
+            }
+            CurveRef::ResourceField(_, _) => todo!(),
+            CurveRef::Asset(handle) => {
+                let (mut editors, mut contexts, mut curves) = params.get_mut(world);
+                let (_, mut editor) = editors.get_mut(editor).unwrap();
+                let (_, mut context) = contexts.single_mut();
+
+                let sample = editor.sample;
+                let title = editor.title.clone();
+                editor.egui_editor.ui_window(
+                    context.as_mut().get_mut(),
+                    title.as_str(),
+                    curves.get_mut(handle).unwrap(),
+                    sample,
+                );
+            }
         }
     }
 }

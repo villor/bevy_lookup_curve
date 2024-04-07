@@ -26,14 +26,11 @@ struct LookupCurveDevState {
 fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     let handle = assets.load("example.curve.ron");
 
-    commands.spawn(LookupCurveEditor {
-        title: "Lookup curve DEV".to_string(),
-        sample: Some(0.0),
-        ..LookupCurveEditor::with_save_path(
-            handle.clone(),
-            "./assets/example.curve.ron".to_string(),
-        )
-    });
+    commands.spawn(
+        LookupCurveEditor::new_with_handle(handle.clone())
+            .title("Lookup curve DEV".to_string())
+            .save_path("./assets/example.curve.ron".to_string()),
+    );
 
     commands.insert_resource(LookupCurveDevState {
         curve_handle: handle,

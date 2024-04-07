@@ -1,15 +1,15 @@
 use bevy::prelude::*;
-use bevy_egui::{EguiContexts, EguiPlugin};
-
 use bevy_lookup_curve::{
-    editor::LookupCurveEguiEditor, Knot, KnotInterpolation, LookupCache, LookupCurve,
+    editor::LookupCurveEditor, Knot, KnotInterpolation, LookupCache, LookupCurve, LookupCurvePlugin,
 };
 
 fn main() {
     App::new()
+        .register_type::<AnimateWithCurve>()
         .add_plugins(DefaultPlugins)
-        .add_plugins(EguiPlugin)
+        .add_plugins(LookupCurvePlugin)
         .add_systems(Startup, setup)
+        .add_systems(Startup, setup_editor.after(setup))
         .add_systems(Update, update)
         .run();
 }
@@ -23,14 +23,11 @@ struct AnimateX {
     speed: f32,
 }
 
-#[derive(Component)]
+#[derive(Component, Reflect)]
 struct AnimateWithCurve(LookupCurve);
 
 #[derive(Component)]
 struct AnimationCache(LookupCache);
-
-#[derive(Component)]
-struct EditorWindow(LookupCurveEguiEditor);
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2dBundle::default());
@@ -60,22 +57,34 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             },
         ])),
         AnimationCache(LookupCache::new()),
-        EditorWindow(LookupCurveEguiEditor::default()),
     ));
+}
+
+fn setup_editor(world: &mut World) {
+    let entities: Vec<Entity> = world
+        .query_filtered::<Entity, With<AnimateWithCurve>>()
+        .iter(world)
+        .collect();
+    let component_id = world.component_id::<AnimateWithCurve>().unwrap();
+    for entity in entities {
+        world.spawn(LookupCurveEditor::new_from_component(
+            entity,
+            component_id,
+            ".0",
+        ));
+    }
 }
 
 fn update(
     mut animate: Query<(
         &mut Transform,
         &mut AnimateX,
-        &mut AnimateWithCurve,
+        &AnimateWithCurve,
         &mut AnimationCache,
-        &mut EditorWindow,
     )>,
-    mut contexts: EguiContexts,
     time: Res<Time>,
 ) {
-    for (mut transform, mut animate, mut curve, mut cache, mut editor) in animate.iter_mut() {
+    for (mut transform, mut animate, curve, mut cache) in animate.iter_mut() {
         // update t
         animate.t += animate.dir * animate.speed * time.delta_seconds();
         if animate.t >= 1.0 {
@@ -90,13 +99,5 @@ fn update(
         // animate sprite
         transform.translation.x = animate.from
             + (animate.to - animate.from) * curve.0.lookup_cached(animate.t, &mut cache.0);
-
-        // draw editor
-        editor.0.ui_window(
-            contexts.ctx_mut(),
-            "Lookup curve",
-            &mut curve.0,
-            Some(animate.t),
-        );
     }
 }
