@@ -28,7 +28,6 @@ impl Plugin for EditorPlugin {
 ///
 /// Holds a `curve_handle` to the loaded lookup curve asset
 pub struct LookupCurveEditor {
-    pub title: String,
     pub curve_handle: Handle<LookupCurve>,
     pub egui_editor: LookupCurveEguiEditor,
     pub sample: Option<f32>,
@@ -38,7 +37,6 @@ impl LookupCurveEditor {
     /// Constructs a [LookupCurveEditor] with the supplied `curve_handle`.
     pub fn new(curve_handle: Handle<LookupCurve>) -> Self {
         Self {
-            title: "Lookup curve".to_string(),
             curve_handle,
             egui_editor: LookupCurveEguiEditor::default(),
             sample: None,
@@ -65,10 +63,9 @@ fn lookup_curve_editor_ui(
     for mut editor in &mut editors {
         if let Some(curve) = curves.get_mut(&editor.curve_handle) {
             let sample = editor.sample;
-            let title = editor.title.clone();
             editor
                 .egui_editor
-                .ui_window(contexts.ctx_mut(), title.as_str(), curve, sample);
+                .ui_window(contexts.ctx_mut(), curve, sample);
         }
     }
 }
@@ -144,26 +141,33 @@ impl LookupCurveEguiEditor {
     /// Display the editor in a window
     ///
     /// If a `sample` is supplied, it will be displayed as a red dot on the curve.
+    ///
+    /// Returns `true` if the curve was changed during this update
     pub fn ui_window(
         &mut self,
         ctx: &mut egui::Context,
-        title: &str,
         curve: &mut LookupCurve,
         sample: Option<f32>,
-    ) {
-        egui::Window::new(title).show(ctx, |ui| {
-            self.ui(ui, curve, sample);
+    ) -> bool {
+        let mut changed = false;
+        egui::Window::new(curve.name_or_default()).show(ctx, |ui| {
+            changed = self.ui(ui, curve, sample);
         });
+        changed
     }
 
     /// Display the editor
     ///
     /// If a `sample` is supplied, it will be displayed as a red dot on the curve.
-    pub fn ui(&mut self, ui: &mut Ui, curve: &mut LookupCurve, sample: Option<f32>) {
+    ///
+    /// Returns `true` if the curve was changed during this update
+    pub fn ui(&mut self, ui: &mut Ui, curve: &mut LookupCurve, sample: Option<f32>) -> bool {
         ui.label(format!(
             "x = {}, y = {}",
             self.hover_point.x, self.hover_point.y
         ));
+
+        let mut changed = false;
 
         if self.ron_path.is_some() && ui.button("Save").clicked() {
             if let Err(e) = save_lookup_curve(self.ron_path.as_ref().unwrap().as_str(), curve) {
@@ -219,6 +223,7 @@ impl LookupCurveEguiEditor {
                         position: self.canvas_to_curve(to_canvas.transform_pos(menu_pos)),
                         ..Default::default()
                     });
+                    changed = true;
                     ui.close_menu();
                 }
             });
@@ -560,9 +565,11 @@ impl LookupCurveEguiEditor {
             // Apply modifications
             if let Some((i, knot)) = modified_knot {
                 curve.modify_knot(i, knot);
+                changed = true;
             }
             if let Some(i) = deleted_knot_index {
                 curve.delete_knot(i);
+                changed = true;
             }
 
             // Sample to visualize and test find_y_given_x
@@ -576,6 +583,8 @@ impl LookupCurveEguiEditor {
                 ));
             }
         });
+
+        changed
     }
 
     fn paint_grid(&mut self, painter: &Painter, to_screen: &emath::RectTransform) {

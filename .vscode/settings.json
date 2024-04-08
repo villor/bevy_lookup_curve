@@ -3,4 +3,5 @@
   "editor.insertSpaces": true,
   "files.eol": "\n",
   "files.encoding": "utf8",
+  "rust-analyzer.cargo.features": "all"
 }

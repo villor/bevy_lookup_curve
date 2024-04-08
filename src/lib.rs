@@ -10,6 +10,9 @@ pub mod asset;
 pub mod editor;
 pub mod knot_search;
 
+#[cfg(feature = "inspector-egui")]
+mod inspector;
+
 use knot_search::KnotSearch;
 
 /// Registers the asset loader and editor components
@@ -19,6 +22,8 @@ impl Plugin for LookupCurvePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(asset::AssetPlugin);
         app.add_plugins(editor::EditorPlugin);
+        #[cfg(feature = "inspector-egui")]
+        app.add_plugins(inspector::InspectorPlugin);
     }
 }
 
@@ -215,6 +220,8 @@ pub struct LookupCurve {
     #[serde(default = "max_error_default")]
     #[reflect(default = "max_error_default")]
     pub max_error: f32,
+
+    pub name: Option<String>,
 }
 
 impl Default for LookupCurve {
@@ -223,6 +230,7 @@ impl Default for LookupCurve {
             knots: vec![],
             max_iters: max_iters_default(),
             max_error: max_error_default(),
+            name: None,
         }
     }
 }
@@ -252,6 +260,16 @@ impl LookupCurve {
     pub fn with_max_error(mut self, max_error: f32) -> Self {
         self.max_error = max_error;
         self
+    }
+
+    /// Consumes the curve and returns it with name set
+    pub fn with_name<S: Into<String>>(mut self, name: S) -> Self {
+        self.name = Some(name.into());
+        self
+    }
+
+    pub(crate) fn name_or_default(&self) -> &str {
+        self.name.as_deref().unwrap_or("Unnamed lookup curve")
     }
 
     /// Returns the knots in the curve as a slice

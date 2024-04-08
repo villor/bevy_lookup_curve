@@ -37,4 +37,5 @@
       ),
     ),
   ],
+  name: Some("Asset curve")
 )
