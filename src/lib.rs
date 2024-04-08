@@ -7,8 +7,11 @@ use bevy_math::Vec2;
 use bevy_reflect::Reflect;
 
 pub mod asset;
-pub mod editor;
+
 pub mod knot_search;
+
+#[cfg(feature = "editor")]
+pub mod editor;
 
 #[cfg(feature = "inspector-egui")]
 mod inspector;
@@ -21,6 +24,7 @@ pub struct LookupCurvePlugin;
 impl Plugin for LookupCurvePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(asset::AssetPlugin);
+        #[cfg(feature = "editor")]
         app.add_plugins(editor::EditorPlugin);
         #[cfg(feature = "inspector-egui")]
         app.add_plugins(inspector::InspectorPlugin);

@@ -26,21 +26,33 @@ thiserror = "1.0"
 serde = "1.0"
 
 # egui editor
-egui = "0.26"
-bevy_egui = "0.25"
+egui = { version = "0.26", optional = true }
+bevy_egui = { version = "0.25", optional = true }
 
 # egui inspector
 bevy-inspector-egui = { version = "0.23.4", default-features = false, optional = true }
 egui_plot = { version = "0.26", optional = true }
 
 [features]
-inspector-egui = ['dep:bevy-inspector-egui', 'dep:egui_plot']
+default = ['editor']
+editor = ['dep:egui', 'dep:bevy_egui']
+inspector-egui = ['editor', 'dep:bevy-inspector-egui', 'dep:egui_plot']
 
 [dev-dependencies]
 bevy = { version = "0.13.0", default-features = false, features = ["x11", "bevy_winit", "bevy_sprite", "bevy_core_pipeline", "bevy_render", "bevy_asset", "png", "multi-threaded"] }
 bevy-inspector-egui = { version = "0.23.4", default-features = false }
 criterion = "0.5.1"
 rand = "0.8.5"
+
+[[example]]
+name = "dev"
+path = "examples/dev.rs"
+required-features = ["editor"]
+
+[[example]]
+name = "animation"
+path = "examples/animation.rs"
+required-features = ["editor"]
 
 # [[bench]]
 # name = "lookup_curve"
