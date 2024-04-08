@@ -212,6 +212,7 @@ fn lookup_curve_miniature_with_edit(
     if let Some(editor_state) = editor_state {
         let mut open = true;
         egui::Window::new(curve.name_or_default())
+            .id(id.with("window"))
             .open(&mut open)
             .show(ui.ctx(), |ui| {
                 changed = editor_state.lock().unwrap().ui(ui, curve, None);
