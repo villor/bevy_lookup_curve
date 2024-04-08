@@ -141,25 +141,33 @@ impl LookupCurveEguiEditor {
     /// Display the editor in a window
     ///
     /// If a `sample` is supplied, it will be displayed as a red dot on the curve.
+    ///
+    /// Returns `true` if the curve was changed during this update
     pub fn ui_window(
         &mut self,
         ctx: &mut egui::Context,
         curve: &mut LookupCurve,
         sample: Option<f32>,
-    ) {
+    ) -> bool {
+        let mut changed = false;
         egui::Window::new(curve.name_or_default()).show(ctx, |ui| {
-            self.ui(ui, curve, sample);
+            changed = self.ui(ui, curve, sample);
         });
+        changed
     }
 
     /// Display the editor
     ///
     /// If a `sample` is supplied, it will be displayed as a red dot on the curve.
-    pub fn ui(&mut self, ui: &mut Ui, curve: &mut LookupCurve, sample: Option<f32>) {
+    ///
+    /// Returns `true` if the curve was changed during this update
+    pub fn ui(&mut self, ui: &mut Ui, curve: &mut LookupCurve, sample: Option<f32>) -> bool {
         ui.label(format!(
             "x = {}, y = {}",
             self.hover_point.x, self.hover_point.y
         ));
+
+        let mut changed = false;
 
         if self.ron_path.is_some() && ui.button("Save").clicked() {
             if let Err(e) = save_lookup_curve(self.ron_path.as_ref().unwrap().as_str(), curve) {
@@ -215,6 +223,7 @@ impl LookupCurveEguiEditor {
                         position: self.canvas_to_curve(to_canvas.transform_pos(menu_pos)),
                         ..Default::default()
                     });
+                    changed = true;
                     ui.close_menu();
                 }
             });
@@ -556,9 +565,11 @@ impl LookupCurveEguiEditor {
             // Apply modifications
             if let Some((i, knot)) = modified_knot {
                 curve.modify_knot(i, knot);
+                changed = true;
             }
             if let Some(i) = deleted_knot_index {
                 curve.delete_knot(i);
+                changed = true;
             }
 
             // Sample to visualize and test find_y_given_x
@@ -572,6 +583,8 @@ impl LookupCurveEguiEditor {
                 ));
             }
         });
+
+        changed
     }
 
     fn paint_grid(&mut self, painter: &Painter, to_screen: &emath::RectTransform) {
