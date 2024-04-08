@@ -30,11 +30,11 @@ egui = "0.26"
 bevy_egui = "0.25"
 
 # egui inspector
-bevy-inspector-egui = { version = "0.23.4", default-features = false }
-egui_plot = "0.26"
+bevy-inspector-egui = { version = "0.23.4", default-features = false, optional = true }
+egui_plot = { version = "0.26", optional = true }
 
-# [features]
-# inspector-egui = ['dep:bevy-inspector-egui']
+[features]
+inspector-egui = ['dep:bevy-inspector-egui', 'dep:egui_plot']
 
 [dev-dependencies]
 bevy = { version = "0.13.0", default-features = false, features = ["x11", "bevy_winit", "bevy_sprite", "bevy_core_pipeline", "bevy_render", "bevy_asset", "png", "multi-threaded"] }
