@@ -28,7 +28,6 @@ impl Plugin for EditorPlugin {
 ///
 /// Holds a `curve_handle` to the loaded lookup curve asset
 pub struct LookupCurveEditor {
-    pub title: String,
     pub curve_handle: Handle<LookupCurve>,
     pub egui_editor: LookupCurveEguiEditor,
     pub sample: Option<f32>,
@@ -38,7 +37,6 @@ impl LookupCurveEditor {
     /// Constructs a [LookupCurveEditor] with the supplied `curve_handle`.
     pub fn new(curve_handle: Handle<LookupCurve>) -> Self {
         Self {
-            title: "Lookup curve".to_string(),
             curve_handle,
             egui_editor: LookupCurveEguiEditor::default(),
             sample: None,
@@ -65,10 +63,9 @@ fn lookup_curve_editor_ui(
     for mut editor in &mut editors {
         if let Some(curve) = curves.get_mut(&editor.curve_handle) {
             let sample = editor.sample;
-            let title = editor.title.clone();
             editor
                 .egui_editor
-                .ui_window(contexts.ctx_mut(), title.as_str(), curve, sample);
+                .ui_window(contexts.ctx_mut(), curve, sample);
         }
     }
 }
@@ -147,11 +144,10 @@ impl LookupCurveEguiEditor {
     pub fn ui_window(
         &mut self,
         ctx: &mut egui::Context,
-        title: &str,
         curve: &mut LookupCurve,
         sample: Option<f32>,
     ) {
-        egui::Window::new(title).show(ctx, |ui| {
+        egui::Window::new(curve.name_or_default()).show(ctx, |ui| {
             self.ui(ui, curve, sample);
         });
     }

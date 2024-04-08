@@ -28,7 +28,6 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     let handle = assets.load("example.curve.ron");
 
     commands.spawn(LookupCurveEditor {
-        title: "Lookup curve DEV".to_string(),
         sample: Some(0.0),
         ..LookupCurveEditor::with_save_path(
             handle.clone(),
@@ -38,7 +37,7 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
 
     commands.insert_resource(LookupCurveDevState {
         curve_handle: handle,
-        curve_noasset: LookupCurve::default(),
+        curve_noasset: LookupCurve::default().with_name("Not asset"),
         sample_dir: 1.0,
         sample: 0.0,
         move_sample: true,

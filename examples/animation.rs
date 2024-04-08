@@ -47,18 +47,21 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             dir: 1.0,
             speed: 0.3,
         },
-        AnimateWithCurve(LookupCurve::new(vec![
-            Knot {
-                position: Vec2::ZERO,
-                interpolation: KnotInterpolation::Linear,
-                ..Default::default()
-            },
-            Knot {
-                position: Vec2::ONE,
-                interpolation: KnotInterpolation::Linear,
-                ..default()
-            },
-        ])),
+        AnimateWithCurve(
+            LookupCurve::new(vec![
+                Knot {
+                    position: Vec2::ZERO,
+                    interpolation: KnotInterpolation::Linear,
+                    ..Default::default()
+                },
+                Knot {
+                    position: Vec2::ONE,
+                    interpolation: KnotInterpolation::Linear,
+                    ..default()
+                },
+            ])
+            .with_name("Animation curve"),
+        ),
         AnimationCache(LookupCache::new()),
         EditorWindow(LookupCurveEguiEditor::default()),
     ));
@@ -92,11 +95,8 @@ fn update(
             + (animate.to - animate.from) * curve.0.lookup_cached(animate.t, &mut cache.0);
 
         // draw editor
-        editor.0.ui_window(
-            contexts.ctx_mut(),
-            "Lookup curve",
-            &mut curve.0,
-            Some(animate.t),
-        );
+        editor
+            .0
+            .ui_window(contexts.ctx_mut(), &mut curve.0, Some(animate.t));
     }
 }
