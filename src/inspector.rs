@@ -1,6 +1,9 @@
-use std::any::{Any, TypeId};
+use std::{
+    any::{Any, TypeId},
+    sync::{Arc, Mutex},
+};
 
-use crate::{LookupCache, LookupCurve};
+use crate::{editor::LookupCurveEguiEditor, LookupCache, LookupCurve};
 use bevy_app::{App, Plugin};
 use bevy_asset::{Assets, Handle};
 use bevy_inspector_egui::inspector_egui_impls::InspectorEguiImpl;
@@ -77,8 +80,7 @@ fn lookup_curve_ui(
     _: InspectorUi<'_, '_>,
 ) -> bool {
     let curve = curve.downcast_mut::<LookupCurve>().unwrap();
-    lookup_curve_miniature(curve, id, ui);
-    false
+    lookup_curve_miniature_with_edit(curve, id, ui)
 }
 
 fn lookup_curve_ui_readonly(
@@ -117,8 +119,7 @@ fn lookup_curve_handle_ui(
         return false;
     };
 
-    lookup_curve_miniature(curve, id, ui);
-    false
+    lookup_curve_miniature_with_edit(curve, id, ui)
 }
 
 fn lookup_curve_handle_ui_readonly(
@@ -132,7 +133,7 @@ fn lookup_curve_handle_ui_readonly(
         ui.label("no world in context");
         return;
     };
-    let mut curves = match world.get_resource_mut::<Assets<LookupCurve>>() {
+    let curves = match world.get_resource_mut::<Assets<LookupCurve>>() {
         Ok(curves) => curves,
         Err(_) => {
             ui.label("no Assets<LookupCurve> in world");
@@ -141,7 +142,7 @@ fn lookup_curve_handle_ui_readonly(
     };
 
     let handle = handle.downcast_ref::<Handle<LookupCurve>>().unwrap();
-    let Some(curve) = curves.get_mut(handle) else {
+    let Some(curve) = curves.get(handle) else {
         ui.label("dead asset handle");
         return;
     };
@@ -149,9 +150,9 @@ fn lookup_curve_handle_ui_readonly(
     lookup_curve_miniature(curve, id, ui);
 }
 
-fn lookup_curve_miniature(curve: &LookupCurve, id: egui::Id, ui: &mut egui::Ui) {
+fn lookup_curve_miniature(curve: &LookupCurve, id: egui::Id, ui: &mut egui::Ui) -> egui::Response {
     let rect = ui.available_rect_before_wrap();
-    let response = egui_plot::Plot::new(id)
+    let plot_response = egui_plot::Plot::new(id.with("plot"))
         .allow_drag(false)
         .allow_scroll(false)
         .allow_zoom(false)
@@ -183,7 +184,45 @@ fn lookup_curve_miniature(curve: &LookupCurve, id: egui::Id, ui: &mut egui::Ui) 
             plot_ui.line(line);
         });
 
-    if response.response.clicked() {
-        // TODO: Open editor
+    plot_response.response
+}
+
+fn lookup_curve_miniature_with_edit(
+    curve: &mut LookupCurve,
+    id: egui::Id,
+    ui: &mut egui::Ui,
+) -> bool {
+    let editor_id = id.with("editor");
+    let editor_state = ui.memory(|mem| {
+        mem.data
+            .get_temp::<Arc<Mutex<LookupCurveEguiEditor>>>(editor_id)
+    });
+
+    let button_response = lookup_curve_miniature(curve, id, ui);
+    if button_response.clicked() {
+        ui.memory_mut(|mem| {
+            mem.data.insert_temp(
+                editor_id,
+                Arc::new(Mutex::new(LookupCurveEguiEditor::default())),
+            )
+        });
     }
+
+    if let Some(editor_state) = editor_state {
+        let mut open = true;
+        egui::Window::new("Lookup curve")
+            .open(&mut open)
+            .show(ui.ctx(), |ui| {
+                editor_state.lock().unwrap().ui(ui, curve, None);
+            });
+
+        if !open {
+            ui.memory_mut(|mem| {
+                mem.data
+                    .remove::<Arc<Mutex<LookupCurveEguiEditor>>>(editor_id)
+            });
+        }
+    }
+
+    false
 }

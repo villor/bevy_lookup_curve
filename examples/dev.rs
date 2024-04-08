@@ -18,6 +18,7 @@ fn main() {
 #[derive(Resource, Default, Reflect)]
 struct LookupCurveDevState {
     curve_handle: Handle<LookupCurve>,
+    curve_noasset: LookupCurve,
     sample_dir: f32,
     sample: f32,
     move_sample: bool,
@@ -37,6 +38,7 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
 
     commands.insert_resource(LookupCurveDevState {
         curve_handle: handle,
+        curve_noasset: LookupCurve::default(),
         sample_dir: 1.0,
         sample: 0.0,
         move_sample: true,
