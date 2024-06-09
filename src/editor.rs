@@ -212,7 +212,7 @@ impl LookupCurveEguiEditor {
             }
 
             // Panning
-            if response.dragged_by(egui::PointerButton::Middle) {
+            if response.dragged() || response.dragged_by(egui::PointerButton::Middle) {
                 self.offset -= self.canvas_to_curve_vec(response.drag_delta());
             }
 
