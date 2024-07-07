@@ -1,6 +1,6 @@
 # bevy_lookup_curve 📈
 
-[<img alt="github" src="https://img.shields.io/badge/github-villor/bevy_lookup_curve-8da0cb?logo=github" height="20">](https://github.com/emilk/egui)
+[<img alt="github" src="https://img.shields.io/badge/github-villor/bevy_lookup_curve-8da0cb?logo=github" height="20">](https://github.com/villor/bevy_lookup_curve)
 [![Latest version](https://img.shields.io/crates/v/bevy_lookup_curve
 )](https://crates.io/crates/bevy_lookup_curve)
 [![Documentation](https://docs.rs/bevy_lookup_curve/badge.svg)](https://docs.rs/bevy_lookup_curve)
