@@ -10,6 +10,7 @@ Bevy 0.14 🥳
 
 ### Changed
 - BREAKING: Removed `title` from `LookupCurveEditor`. Instead we use the (optional) name from `LookupCurve` which is shown as editor window title.
+- BREAKING: `LookupCurveEguiEditor::ui_window` now requires an id (impl Hash), to ensure there are no ambiguities.
 - `LookupCurveEditor::ui_window`, `LookupCurveEguiEditor::ui_window` and `LookupCurveEguiEditor::ui` now return a bool to indicate whether the curve was changed/modified during this update/render.
 
 ### Updated
