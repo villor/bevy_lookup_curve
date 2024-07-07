@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.3.0] - 07-Jul-2024
+
+Bevy 0.14 🥳
+
+### Added
+- Integration with bevy-inspector-egui. Enable the feature `inspector-egui` and the curves will show up in the inspector. Click on the miniature to open the editor.
+- Optional feature flag for the editor: `editor`
+
+### Changed
+- BREAKING: Removed `title` from `LookupCurveEditor`. Instead we use the (optional) name from `LookupCurve` which is shown as editor window title.
+- `LookupCurveEditor::ui_window`, `LookupCurveEguiEditor::ui_window` and `LookupCurveEguiEditor::ui` now return a bool to indicate whether the curve was changed/modified during this update/render.
+
+### Updated
+- bevy to 0.14
+- bevy_egui to 0.28
+
 ## [0.2.1] - 05-Apr-2024
 
 ### Changed

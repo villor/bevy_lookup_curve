@@ -21,7 +21,7 @@ If you have used AnimationCurve in Unity, this would be an attempt at something 
 - [x] LookupCurve type with modifiable knots and tangents. Three types of interpolation: Constant, Linear, and Cubic
 - [x] Asset loader and save functionality
 - [x] Egui based editor
-- [ ] [UNRELEASED] Integration with [bevy-inspector-egui](https://github.com/jakobhellermann/bevy-inspector-egui) for quick and easy tweaking
+- [x] Integration with [bevy-inspector-egui](https://github.com/jakobhellermann/bevy-inspector-egui) for quick and easy tweaking
 
 https://github.com/villor/bevy_lookup_curve/assets/7102243/180aed95-ca9a-4e3b-97c4-2516055ea648
 
@@ -37,6 +37,7 @@ See [examples](https://github.com/villor/bevy_lookup_curve/tree/main/examples) f
 ## Bevy support
 |bevy|bevy_lookup_curve|
 |---|---|
+|0.14|0.3|
 |0.13|0.1-0.2|
 
 ## Contributing
