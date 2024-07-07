@@ -606,7 +606,8 @@ impl LookupCurveEguiEditor {
                     stroke: Stroke {
                         width: 1.0,
                         color: Color32::from_rgb(42, 42, 42),
-                    },
+                    }
+                    .into(),
                 });
 
                 painter.text(
@@ -640,7 +641,8 @@ impl LookupCurveEguiEditor {
                     stroke: Stroke {
                         width: 1.0,
                         color: Color32::from_rgb(42, 42, 42),
-                    },
+                    }
+                    .into(),
                 });
 
                 let text_canvas_pos = Pos2::new(5., self.curve_to_canvas(line_from).y);

@@ -1,6 +1,5 @@
 use bevy_app::{App, Plugin};
 use bevy_asset::{io::Reader, AssetApp, AssetLoader, AsyncReadExt, LoadContext};
-use bevy_utils::{thiserror, BoxedFuture};
 use thiserror::Error;
 
 use crate::LookupCurve;
@@ -32,18 +31,17 @@ impl AssetLoader for LookupCurveAssetLoader {
     type Asset = LookupCurve;
     type Settings = ();
     type Error = LookupCurveAssetLoaderError;
-    fn load<'a>(
+
+    async fn load<'a>(
         &'a self,
-        reader: &'a mut Reader,
+        reader: &'a mut Reader<'_>,
         _settings: &'a (),
-        _load_context: &'a mut LoadContext,
-    ) -> BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
-        Box::pin(async move {
-            let mut bytes = Vec::new();
-            reader.read_to_end(&mut bytes).await?;
-            let lookup_curve = ron::de::from_bytes::<LookupCurve>(&bytes)?;
-            Ok(lookup_curve)
-        })
+        _load_context: &'a mut LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+        let mut bytes = Vec::new();
+        reader.read_to_end(&mut bytes).await?;
+        let lookup_curve = ron::de::from_bytes::<LookupCurve>(&bytes)?;
+        Ok(lookup_curve)
     }
 
     fn extensions(&self) -> &[&str] {

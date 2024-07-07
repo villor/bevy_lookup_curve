@@ -14,7 +14,7 @@ pub(crate) struct InspectorPlugin;
 
 impl Plugin for InspectorPlugin {
     fn build(&self, app: &mut App) {
-        let type_registry = app.world.resource::<bevy_ecs::prelude::AppTypeRegistry>();
+        let type_registry = app.world().resource::<bevy_ecs::prelude::AppTypeRegistry>();
         let mut type_registry = type_registry.write();
 
         type_registry.register::<LookupCurve>();

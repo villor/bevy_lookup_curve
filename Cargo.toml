@@ -10,37 +10,36 @@ readme = "README.md"
 version = "0.2.1"
 edition = "2021"
 
-[dependencies]
-# core
-bevy_app = "0.13"
-bevy_math = "0.13"
-bevy_ecs = "0.13"
-bevy_reflect = { version = "0.13", features = ['bevy'] }
-bevy_log = "0.13"
-
-# asset
-bevy_asset = "0.13"
-bevy_utils = "0.13"
-ron = "0.8"
-thiserror = "1.0"
-serde = "1.0"
-
-# egui editor
-egui = { version = "0.27", optional = true }
-bevy_egui = { version = "0.27", optional = true }
-
-# egui inspector
-bevy-inspector-egui = { version = "0.24.0", default-features = false, optional = true }
-egui_plot = { version = "0.27", optional = true }
-
 [features]
 default = ['editor']
 editor = ['dep:egui', 'dep:bevy_egui']
 inspector-egui = ['editor', 'dep:bevy-inspector-egui', 'dep:egui_plot']
 
+[dependencies]
+# core
+bevy_app = "0.14"
+bevy_math = "0.14"
+bevy_ecs = "0.14"
+bevy_reflect = { version = "0.14", features = ['bevy'] }
+bevy_log = "0.14"
+
+# asset
+bevy_asset = "0.14"
+ron = "0.8"
+thiserror = "1.0"
+serde = "1.0"
+
+# egui editor
+egui = { version = "0.28", optional = true }
+bevy_egui = { version = "0.28", default-features = false, features = ["render"], optional = true }
+
+# egui inspector
+bevy-inspector-egui = { version = "0.25.0", default-features = false, features = ["bevy_render"], optional = true }
+egui_plot = { version = "0.28", optional = true }
+
 [dev-dependencies]
-bevy = { version = "0.13.0", default-features = false, features = ["x11", "bevy_winit", "bevy_sprite", "bevy_core_pipeline", "bevy_render", "bevy_asset", "png", "multi-threaded"] }
-bevy-inspector-egui = { version = "0.24.0", default-features = false }
+bevy = "0.14"
+bevy-inspector-egui = "0.25.0"
 criterion = "0.5.1"
 rand = "0.8.5"
 
