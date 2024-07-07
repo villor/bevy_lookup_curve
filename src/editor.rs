@@ -1,11 +1,12 @@
 use bevy_app::{App, Plugin, Update};
 use bevy_asset::{Assets, Handle};
-use bevy_ecs::prelude::{Component, Query, ResMut};
+use bevy_ecs::prelude::{Component, Entity, Query, ResMut};
 use bevy_egui::{EguiContexts, EguiPlugin};
 use bevy_math::Vec2;
 use bevy_reflect::Reflect;
 use egui::{
-    emath, epaint::CubicBezierShape, Color32, Frame, Painter, Pos2, Rect, Sense, Shape, Stroke, Ui,
+    emath, epaint::CubicBezierShape, Color32, Frame, Id, Painter, Pos2, Rect, Sense, Shape, Stroke,
+    Ui,
 };
 
 use crate::{
@@ -56,16 +57,16 @@ impl LookupCurveEditor {
 }
 
 fn lookup_curve_editor_ui(
-    mut editors: Query<&mut LookupCurveEditor>,
+    mut editors: Query<(Entity, &mut LookupCurveEditor)>,
     mut contexts: EguiContexts,
     mut curves: ResMut<Assets<LookupCurve>>,
 ) {
-    for mut editor in &mut editors {
+    for (entity, mut editor) in &mut editors {
         if let Some(curve) = curves.get_mut(&editor.curve_handle) {
             let sample = editor.sample;
             editor
                 .egui_editor
-                .ui_window(contexts.ctx_mut(), curve, sample);
+                .ui_window(contexts.ctx_mut(), entity, curve, sample);
         }
     }
 }
@@ -146,13 +147,16 @@ impl LookupCurveEguiEditor {
     pub fn ui_window(
         &mut self,
         ctx: &mut egui::Context,
+        id: impl std::hash::Hash,
         curve: &mut LookupCurve,
         sample: Option<f32>,
     ) -> bool {
         let mut changed = false;
-        egui::Window::new(curve.name_or_default()).show(ctx, |ui| {
-            changed = self.ui(ui, curve, sample);
-        });
+        egui::Window::new(curve.name_or_default())
+            .id(Id::new(id))
+            .show(ctx, |ui| {
+                changed = self.ui(ui, curve, sample);
+            });
         changed
     }
 

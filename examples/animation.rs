@@ -69,6 +69,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 
 fn update(
     mut animate: Query<(
+        Entity,
         &mut Transform,
         &mut AnimateX,
         &mut AnimateWithCurve,
@@ -78,7 +79,8 @@ fn update(
     mut contexts: EguiContexts,
     time: Res<Time>,
 ) {
-    for (mut transform, mut animate, mut curve, mut cache, mut editor) in animate.iter_mut() {
+    for (entity, mut transform, mut animate, mut curve, mut cache, mut editor) in animate.iter_mut()
+    {
         // update t
         animate.t += animate.dir * animate.speed * time.delta_seconds();
         if animate.t >= 1.0 {
@@ -97,6 +99,6 @@ fn update(
         // draw editor
         editor
             .0
-            .ui_window(contexts.ctx_mut(), &mut curve.0, Some(animate.t));
+            .ui_window(contexts.ctx_mut(), entity, &mut curve.0, Some(animate.t));
     }
 }
