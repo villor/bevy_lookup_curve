@@ -1,82 +1,16 @@
-use bevy_app::{App, Plugin, Update};
-use bevy_asset::{Assets, Handle};
-use bevy_ecs::prelude::{Component, Entity, Query, ResMut};
-use bevy_egui::{EguiContexts, EguiPlugin};
 use bevy_math::Vec2;
-use bevy_reflect::Reflect;
 use egui::{
     emath, epaint::CubicBezierShape, Color32, Frame, Id, Painter, Pos2, Rect, Sense, Shape, Stroke,
     Ui,
 };
 
-use crate::{
-    asset::save_lookup_curve, Knot, KnotInterpolation, LookupCurve, TangentMode, TangentSide,
-};
+use crate::{Knot, KnotInterpolation, LookupCurve, TangentMode, TangentSide};
 
-pub(crate) struct EditorPlugin;
-
-impl Plugin for EditorPlugin {
-    fn build(&self, app: &mut App) {
-        if !app.is_plugin_added::<EguiPlugin>() {
-            app.add_plugins(EguiPlugin);
-        }
-        app.add_systems(Update, lookup_curve_editor_ui);
-    }
-}
-
-#[derive(Component, Reflect)]
-/// Component for convience of spawning lookup curve editor windows
-///
-/// Holds a `curve_handle` to the loaded lookup curve asset
-pub struct LookupCurveEditor {
-    pub curve_handle: Handle<LookupCurve>,
-    pub egui_editor: LookupCurveEguiEditor,
-    pub sample: Option<f32>,
-}
-
-impl LookupCurveEditor {
-    /// Constructs a [LookupCurveEditor] with the supplied `curve_handle`.
-    pub fn new(curve_handle: Handle<LookupCurve>) -> Self {
-        Self {
-            curve_handle,
-            egui_editor: LookupCurveEguiEditor::default(),
-            sample: None,
-        }
-    }
-
-    /// Constructs a [LookupCurveEditor] with the supplied `curve_handle` and `path` as save path.
-    pub fn with_save_path(curve_handle: Handle<LookupCurve>, path: String) -> Self {
-        Self {
-            egui_editor: LookupCurveEguiEditor {
-                ron_path: Some(path),
-                ..Default::default()
-            },
-            ..LookupCurveEditor::new(curve_handle)
-        }
-    }
-}
-
-fn lookup_curve_editor_ui(
-    mut editors: Query<(Entity, &mut LookupCurveEditor)>,
-    mut contexts: EguiContexts,
-    mut curves: ResMut<Assets<LookupCurve>>,
-) {
-    for (entity, mut editor) in &mut editors {
-        if let Some(curve) = curves.get_mut(&editor.curve_handle) {
-            let sample = editor.sample;
-            editor
-                .egui_editor
-                .ui_window(contexts.ctx_mut(), entity, curve, sample);
-        }
-    }
-}
-
-#[derive(Reflect)]
+#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 /// Lookup curve editor implemented using `egui`.
 ///
 /// Holds the editor state.
 pub struct LookupCurveEguiEditor {
-    //pub curve: Option<Handle<LookupCurve>>,
     pub offset: Vec2,
     pub scale: Vec2,
 
@@ -92,7 +26,6 @@ pub struct LookupCurveEguiEditor {
 impl Default for LookupCurveEguiEditor {
     fn default() -> Self {
         Self {
-            //curve: None,
             offset: Vec2::ZERO,
             scale: Vec2::new(1.0, 1.0),
 
@@ -174,10 +107,16 @@ impl LookupCurveEguiEditor {
         let mut changed = false;
 
         if self.ron_path.is_some() && ui.button("Save").clicked() {
-            if let Err(e) = save_lookup_curve(self.ron_path.as_ref().unwrap().as_str(), curve) {
+            if let Err(e) = curve.save_to_file(self.ron_path.as_ref().unwrap().as_str()) {
+                #[cfg(feature = "bevy_app")]
                 bevy_log::error!("Failed to save curve {}", e);
+                #[cfg(not(feature = "bevy_app"))]
+                println!("Failed to save curve {}", e);
             } else {
+                #[cfg(feature = "bevy_app")]
                 bevy_log::info!("Curve saved successfully.");
+                #[cfg(not(feature = "bevy_app"))]
+                println!("Curve saved successfully.");
             }
         }
 

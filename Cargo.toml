@@ -11,29 +11,31 @@ version = "0.3.0"
 edition = "2021"
 
 [features]
-default = ['editor']
-editor = ['dep:egui', 'dep:bevy_egui']
-inspector-egui = ['editor', 'dep:bevy-inspector-egui', 'dep:egui_plot']
+default = ['editor_bevy', 'bevy_reflect']
+serialize = ['dep:serde', 'bevy_math/serialize']
+ron = ['serialize', 'dep:ron', 'dep:thiserror']
+bevy_reflect = ['dep:bevy_reflect', 'bevy_math/bevy_reflect', 'bevy_app?/bevy_reflect', 'bevy_ecs?/bevy_reflect']
+bevy_app = ['dep:bevy_app', 'dep:bevy_log']
+bevy_asset = ['ron', 'dep:bevy_asset']
+editor_egui = ['dep:egui']
+editor_bevy = ['bevy_app', 'bevy_ecs', 'bevy_asset', 'editor_egui', 'dep:bevy_egui']
+inspector-egui = ['bevy_reflect', 'bevy_app', 'bevy_asset', 'editor_egui', 'dep:bevy-inspector-egui', 'dep:egui_plot']
 
 [dependencies]
-# core
-bevy_app = "0.14"
-bevy_math = "0.14"
-bevy_ecs = "0.14"
-bevy_reflect = { version = "0.14", features = ['bevy'] }
-bevy_log = "0.14"
+bevy_math = { version = "0.14", default-features = false }
+bevy_reflect = { version = "0.14", default-features = false, optional = true }
+bevy_app = { version = "0.14", default-features = false, optional = true }
+bevy_ecs = { version = "0.14", default-features = false, optional = true }
+bevy_asset = { version = "0.14", optional = true }
+bevy_log = { version = "0.14", default-features = false, optional = true }
 
-# asset
-bevy_asset = "0.14"
-ron = "0.8"
-thiserror = "1.0"
-serde = "1.0"
+thiserror = { version = "1.0", optional = true }
+serde = { version = "1.0", optional = true }
+ron = { version = "0.8", optional = true }
 
-# egui editor
 egui = { version = "0.28", optional = true }
 bevy_egui = { version = "0.28", default-features = false, features = ["render"], optional = true }
 
-# egui inspector
 bevy-inspector-egui = { version = "0.25.0", default-features = false, features = ["bevy_render"], optional = true }
 egui_plot = { version = "0.28", optional = true }
 
@@ -42,16 +44,22 @@ bevy = "0.14"
 bevy-inspector-egui = "0.25.0"
 criterion = "0.5.1"
 rand = "0.8.5"
+eframe = "0.28"
 
 [[example]]
 name = "dev"
 path = "examples/dev.rs"
-required-features = ["editor"]
+required-features = ["editor_bevy", "bevy_reflect"]
 
 [[example]]
 name = "animation"
 path = "examples/animation.rs"
-required-features = ["editor"]
+required-features = ["editor_egui"]
+
+[[example]]
+name = "egui_only"
+path = "examples/egui_only.rs"
+required-features = ["editor_egui", "ron"]
 
 # [[bench]]
 # name = "lookup_curve"

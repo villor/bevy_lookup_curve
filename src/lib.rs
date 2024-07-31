@@ -1,38 +1,62 @@
-use serde::{Deserialize, Serialize};
+use bevy_math::Vec2;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use bevy_app::{App, Plugin};
-use bevy_asset::Asset;
-use bevy_math::Vec2;
-use bevy_reflect::Reflect;
+pub mod knot_search;
+use knot_search::KnotSearch;
 
+#[cfg(feature = "bevy_asset")]
 pub mod asset;
 
-pub mod knot_search;
-
-#[cfg(feature = "editor")]
+#[cfg(feature = "editor_egui")]
 pub mod editor;
 
 #[cfg(feature = "inspector-egui")]
 mod inspector;
 
-use knot_search::KnotSearch;
-
 /// Registers the asset loader and editor components
+#[cfg(feature = "bevy_app")]
 pub struct LookupCurvePlugin;
 
-impl Plugin for LookupCurvePlugin {
-    fn build(&self, app: &mut App) {
+#[cfg(feature = "bevy_app")]
+impl bevy_app::Plugin for LookupCurvePlugin {
+    fn build(&self, app: &mut bevy_app::App) {
+        #[cfg(feature = "bevy_asset")]
         app.add_plugins(asset::AssetPlugin);
-        #[cfg(feature = "editor")]
+        #[cfg(feature = "editor_bevy")]
         app.add_plugins(editor::EditorPlugin);
         #[cfg(feature = "inspector-egui")]
         app.add_plugins(inspector::InspectorPlugin);
     }
 }
 
+#[cfg(feature = "ron")]
+#[non_exhaustive]
+#[derive(Debug, thiserror::Error)]
+pub enum LookupCurveLoadError {
+    /// An [IO](std::io) Error
+    #[error("Could not load lookup curve: {0}")]
+    Io(#[from] std::io::Error),
+    /// A [RON](ron) Error
+    #[error("Could not parse RON for lookup curve: {0}")]
+    RonSpannedError(#[from] ron::error::SpannedError),
+}
+
+#[cfg(feature = "ron")]
+#[non_exhaustive]
+#[derive(Debug, thiserror::Error)]
+pub enum LookupCurveSaveError {
+    /// An [IO](std::io) Error
+    #[error("Could not save lookup curve: {0}")]
+    Io(#[from] std::io::Error),
+    /// A [RON](ron) Error
+    #[error("Could not serialize lookup curve to RON: {0}")]
+    RonError(#[from] ron::error::Error),
+}
+
 /// How a tangent behaves when a knot or its tangents are moved
-#[derive(Reflect, Copy, Clone, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub enum TangentMode {
     /// The tangent can be freely moved without affecting the other tangent
     Free,
@@ -43,7 +67,9 @@ pub enum TangentMode {
 }
 
 /// Tangents are used to control cubic interpolation for [Knot]s in a [LookupCurve]
-#[derive(Reflect, Copy, Clone, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub struct Tangent {
     pub slope: f32,
     pub mode: TangentMode,
@@ -77,14 +103,18 @@ impl Default for Tangent {
 }
 
 /// Interpolation used between a [Knot] the next knot
-#[derive(Reflect, Copy, Clone, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub enum KnotInterpolation {
     Constant,
     Linear,
     Cubic,
 }
 
-#[derive(Reflect, Copy, Clone, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 /// A knot in a [LookupCurve].
 pub struct Knot {
     /// The position of this knot in curve space
@@ -193,7 +223,9 @@ impl Default for Knot {
 }
 
 /// Cache to speed up coherent lookups, see [LookupCurve::lookup_cached]
-#[derive(Reflect, Debug, Clone, Default)]
+#[derive(Copy, Clone, Debug, Default)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
 pub struct LookupCache {
     last_knot_index: Option<usize>,
 }
@@ -212,7 +244,10 @@ const fn max_error_default() -> f32 {
 }
 
 /// Two-dimensional spline that only allows a single y-value per x-value
-#[derive(Asset, Clone, Debug, Reflect, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "bevy_reflect", derive(bevy_reflect::Reflect))]
+#[cfg_attr(feature = "bevy_asset", derive(bevy_asset::Asset))]
 pub struct LookupCurve {
     knots: Vec<Knot>,
 
@@ -274,6 +309,27 @@ impl LookupCurve {
 
     pub(crate) fn name_or_default(&self) -> &str {
         self.name.as_deref().unwrap_or("Unnamed lookup curve")
+    }
+
+    #[cfg(feature = "ron")]
+    /// Serializes the lookup curve and saves it as a RON file
+    pub fn load_from_file(path: &str) -> Result<Self, LookupCurveLoadError> {
+        let bytes = std::fs::read(path)?;
+        let lookup_curve = ron::de::from_bytes::<LookupCurve>(&bytes)?;
+        Ok(lookup_curve)
+    }
+
+    #[cfg(feature = "ron")]
+    /// Serializes the lookup curve and saves it as a RON file
+    pub fn save_to_file(&self, path: &str) -> Result<(), LookupCurveSaveError> {
+        let config = ron::ser::PrettyConfig::new()
+            .new_line("\n".to_string())
+            .indentor("  ".to_string());
+
+        let s = ron::ser::to_string_pretty(self, config)?;
+        std::fs::write(path, s.as_bytes())?;
+
+        Ok(())
     }
 
     /// Returns the knots in the curve as a slice

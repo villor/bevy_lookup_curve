@@ -2,7 +2,7 @@ use bevy_app::{App, Plugin};
 use bevy_asset::{io::Reader, AssetApp, AssetLoader, AsyncReadExt, LoadContext};
 use thiserror::Error;
 
-use crate::LookupCurve;
+use crate::{LookupCurve, LookupCurveLoadError};
 
 pub(crate) struct AssetPlugin;
 
@@ -16,21 +16,10 @@ impl Plugin for AssetPlugin {
 #[derive(Default)]
 pub struct LookupCurveAssetLoader;
 
-#[non_exhaustive]
-#[derive(Debug, Error)]
-pub enum LookupCurveAssetLoaderError {
-    /// An [IO](std::io) Error
-    #[error("Could not load lookup curve: {0}")]
-    Io(#[from] std::io::Error),
-    /// A [RON](ron) Error
-    #[error("Could not parse RON for lookup curve: {0}")]
-    RonSpannedError(#[from] ron::error::SpannedError),
-}
-
 impl AssetLoader for LookupCurveAssetLoader {
     type Asset = LookupCurve;
     type Settings = ();
-    type Error = LookupCurveAssetLoaderError;
+    type Error = LookupCurveLoadError;
 
     async fn load<'a>(
         &'a self,
