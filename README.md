@@ -45,7 +45,7 @@ See [examples](https://github.com/villor/bevy_lookup_curve/tree/main/examples) f
 |0.14|0.3-0.4|
 |0.13|0.1-0.2|
 
-# Using without Bevy
+## Using without Bevy
 This crate can be used without Bevy as well (except for `bevy_math` which is a core dependency).
 
 Just set `default-features = false`. And enable `serialize`, `ron`, and/or `editor_egui` if needed.
