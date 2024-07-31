@@ -31,7 +31,12 @@ See [examples](https://github.com/villor/bevy_lookup_curve/tree/main/examples) f
 ## Feature flags
 |Feature|Default|Description|
 |---|---|---|
-|**editor**|**Yes**|Enables the [egui](https://github.com/emilk/egui)-based editor|
+|**serialize**|**Yes**|Enable serde serialization/deserialization for the LookupCurve|
+|**ron**|**Yes**|Enable loading/saving the curve as a ron file|
+|**bevy_reflect**|**Yes**|Implement Reflect on most types in the crate|
+|**bevy_asset**|**Yes**|Implement AssetLoader for LookupCurve|
+|**editor_egui**|**Yes**|Enables the [egui](https://github.com/emilk/egui)-based editor|
+|**editor_bevy**|**Yes**|ECS component for convenient spawning of editor windows inside Bevy|
 |**inspector-egui**|No|Integration with [bevy-inspector-egui](https://github.com/jakobhellermann/bevy-inspector-egui)|
 
 ## Bevy support
@@ -39,6 +44,13 @@ See [examples](https://github.com/villor/bevy_lookup_curve/tree/main/examples) f
 |---|---|
 |0.14|0.3|
 |0.13|0.1-0.2|
+
+# Using without Bevy
+This crate can be used without Bevy as well (except for `bevy_math` which is a core dependency).
+
+Just set `default-features = false`. And enable `serialize`, `ron`, and/or `editor_egui` if needed.
+
+See the `egui_only` example. It can also be used as a standalone curve editor.
 
 ## Contributing
 Contributions are welcome. Feel free to make a PR! 
