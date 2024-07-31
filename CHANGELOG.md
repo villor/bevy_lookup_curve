@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.4.0] - 31-Jul-2024
+
+Feature separation!
+
+### Changed
+- Separated the crate into smaller features, allowing the use of `bevy_lookup_curve` in projects that does not want to pull in full Bevy as a dependency. See README for a full list of features.
+- BREAKING: Moved `save_lookup_curve` from the `asset` module to `LookupCurve::save_to_file`, see below.
+
+### Added
+- `load_from_file` and `save_to_file` to `LookupCurve`. Requires feature `ron` to be enabled.
+
 ## [0.3.0] - 07-Jul-2024
 
 Bevy 0.14 🥳

@@ -42,7 +42,7 @@ See [examples](https://github.com/villor/bevy_lookup_curve/tree/main/examples) f
 ## Bevy support
 |bevy|bevy_lookup_curve|
 |---|---|
-|0.14|0.3|
+|0.14|0.3-0.4|
 |0.13|0.1-0.2|
 
 # Using without Bevy
