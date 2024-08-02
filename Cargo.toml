@@ -16,10 +16,10 @@ serialize = ['dep:serde', 'bevy_math/serialize']
 ron = ['serialize', 'dep:ron', 'dep:thiserror']
 bevy_reflect = ['dep:bevy_reflect', 'bevy_math/bevy_reflect', 'bevy_app?/bevy_reflect', 'bevy_ecs?/bevy_reflect']
 bevy_app = ['dep:bevy_app', 'dep:bevy_log']
-bevy_asset = ['ron', 'dep:bevy_asset']
+bevy_asset = ['ron', 'bevy_app', 'bevy_reflect', 'dep:bevy_asset']
 editor_egui = ['dep:egui']
 editor_bevy = ['bevy_app', 'bevy_ecs', 'bevy_asset', 'editor_egui', 'dep:bevy_egui']
-inspector-egui = ['bevy_reflect', 'bevy_app', 'bevy_asset', 'editor_egui', 'dep:bevy-inspector-egui', 'dep:egui_plot']
+inspector-egui = ['bevy_reflect', 'bevy_app', 'bevy_ecs', 'bevy_asset', 'editor_egui', 'dep:bevy-inspector-egui', 'dep:egui_plot']
 
 [dependencies]
 bevy_math = { version = "0.14", default-features = false }

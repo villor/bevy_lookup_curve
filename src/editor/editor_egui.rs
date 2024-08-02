@@ -20,6 +20,7 @@ pub struct LookupCurveEguiEditor {
     pub editor_size: Vec2,
     pub hover_point: Vec2,
 
+    #[cfg(feature = "ron")]
     pub ron_path: Option<String>,
 }
 
@@ -35,6 +36,7 @@ impl Default for LookupCurveEguiEditor {
             editor_size: Vec2::ZERO,
             hover_point: Vec2::ZERO,
 
+            #[cfg(feature = "ron")]
             ron_path: None,
         }
     }
@@ -42,6 +44,7 @@ impl Default for LookupCurveEguiEditor {
 
 impl LookupCurveEguiEditor {
     /// Constructs a [LookupCurveEguiEditor] with the supplied `path` as save path.
+    #[cfg(feature = "ron")]
     pub fn with_save_path(path: String) -> Self {
         Self {
             ron_path: Some(path),
@@ -106,6 +109,7 @@ impl LookupCurveEguiEditor {
 
         let mut changed = false;
 
+        #[cfg(feature = "ron")]
         if self.ron_path.is_some() && ui.button("Save").clicked() {
             if let Err(e) = curve.save_to_file(self.ron_path.as_ref().unwrap().as_str()) {
                 #[cfg(feature = "bevy_app")]
