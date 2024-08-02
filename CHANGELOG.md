@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.4.1] - 02-Aug-2024
+
+Fixed build errors on some features.
+
 ## [0.4.0] - 31-Jul-2024
 
 Feature separation!
