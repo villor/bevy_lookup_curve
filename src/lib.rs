@@ -14,10 +14,18 @@ pub mod editor;
 mod inspector;
 
 /// Registers the asset loader and editor components
-#[cfg(feature = "bevy_app")]
+#[cfg(any(
+    feature = "bevy_asset",
+    feature = "editor_bevy",
+    feature = "inspector-egui"
+))]
 pub struct LookupCurvePlugin;
 
-#[cfg(feature = "bevy_app")]
+#[cfg(any(
+    feature = "bevy_asset",
+    feature = "editor_bevy",
+    feature = "inspector-egui"
+))]
 impl bevy_app::Plugin for LookupCurvePlugin {
     fn build(&self, app: &mut bevy_app::App) {
         #[cfg(feature = "bevy_asset")]
@@ -131,8 +139,14 @@ pub struct Knot {
     /// Identifier used by editor operations because index might change during modification
     ///
     /// There should not be any need to change this as it will be set internally.
-    #[serde(skip_serializing, default = "unique_knot_id")]
-    #[reflect(skip_serializing, default = "unique_knot_id")]
+    #[cfg_attr(
+        feature = "serialize",
+        serde(skip_serializing, default = "unique_knot_id")
+    )]
+    #[cfg_attr(
+        feature = "bevy_reflect",
+        reflect(skip_serializing, default = "unique_knot_id")
+    )]
     pub id: usize,
 }
 
@@ -142,14 +156,14 @@ fn unique_knot_id() -> usize {
 }
 
 #[derive(Copy, Clone, Hash)]
-enum TangentSide {
+pub enum TangentSide {
     Left,
     Right,
 }
 
 impl Knot {
     /// Returns a new knot copied from self, with the tangent slope decided by `side` set to `slope`. This might also affect the other tangent depending on [`TangentMode`].
-    fn with_tangent_slope(&self, side: TangentSide, slope: f32) -> Self {
+    pub fn with_tangent_slope(&self, side: TangentSide, slope: f32) -> Self {
         let mut knot = *self;
 
         let aligned = matches!(
@@ -168,7 +182,7 @@ impl Knot {
     }
 
     /// Returns a new knot copied from self, with the tangent mode decided by `side` set to `mode`.
-    fn with_tangent_mode(&self, side: TangentSide, mode: TangentMode) -> Self {
+    pub fn with_tangent_mode(&self, side: TangentSide, mode: TangentMode) -> Self {
         let mut knot = *self;
         match side {
             TangentSide::Left => knot.left_tangent.mode = mode,
@@ -178,7 +192,7 @@ impl Knot {
     }
 
     /// Returns a new knot copied from self, with the tangent weight decided by `side` set to `weight`. Weights will be clamped between 0 and 1.
-    fn with_tangent_weight(&self, side: TangentSide, weight: Option<f32>) -> Self {
+    pub fn with_tangent_weight(&self, side: TangentSide, weight: Option<f32>) -> Self {
         let mut knot = *self;
         let weight = weight.map(|w| w.clamp(0.0, 1.0));
         match side {
@@ -252,12 +266,24 @@ pub struct LookupCurve {
     knots: Vec<Knot>,
 
     /// Max number of iterations used for Newton-Rhapson iteration in weighted cubic segments
-    #[serde(default = "max_iters_default")]
-    #[reflect(default = "max_iters_default")]
+    #[cfg_attr(
+        feature = "serialize",
+        serde(skip_serializing, default = "max_iters_default")
+    )]
+    #[cfg_attr(
+        feature = "bevy_reflect",
+        reflect(skip_serializing, default = "max_iters_default")
+    )]
     pub max_iters: u8,
     /// Max error allowed before breaking Newton-Rhapson iteration in weighted cubic segments
-    #[serde(default = "max_error_default")]
-    #[reflect(default = "max_error_default")]
+    #[cfg_attr(
+        feature = "serialize",
+        serde(skip_serializing, default = "max_error_default")
+    )]
+    #[cfg_attr(
+        feature = "bevy_reflect",
+        reflect(skip_serializing, default = "max_error_default")
+    )]
     pub max_error: f32,
 
     pub name: Option<String>,
@@ -307,6 +333,7 @@ impl LookupCurve {
         self
     }
 
+    #[allow(dead_code)]
     pub(crate) fn name_or_default(&self) -> &str {
         self.name.as_deref().unwrap_or("Unnamed lookup curve")
     }
