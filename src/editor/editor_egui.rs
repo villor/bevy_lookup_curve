@@ -132,12 +132,18 @@ impl LookupCurveEguiEditor {
     ///
     /// Returns `true` if the curve was changed during this update
     pub fn ui(&mut self, ui: &mut Ui, curve: &mut LookupCurve, sample: Option<f32>) -> bool {
-        ui.label(format!(
-            "x = {}, y = {}",
-            self.hover_point.x, self.hover_point.y
-        ));
-
         let mut changed = false;
+        ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
+            if ui.button("Refocus curve").clicked() {
+                changed = true;
+                self.fit_to_curve(curve);
+            }
+
+            ui.label(format!(
+                "x = {}, y = {}",
+                self.hover_point.x, self.hover_point.y
+            ));
+        });
 
         #[cfg(feature = "ron")]
         if self.ron_path.is_some() && ui.button("Save").clicked() {
