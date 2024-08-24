@@ -11,7 +11,7 @@ version = "0.4.1"
 edition = "2021"
 
 [features]
-default = ['editor_bevy', 'bevy_reflect', 'inspector-egui']
+default = ['editor_bevy', 'bevy_reflect']
 serialize = ['dep:serde', 'bevy_math/serialize']
 ron = ['serialize', 'dep:ron', 'dep:thiserror']
 bevy_reflect = ['dep:bevy_reflect', 'bevy_math/bevy_reflect', 'bevy_app?/bevy_reflect', 'bevy_ecs?/bevy_reflect']

@@ -202,10 +202,9 @@ fn lookup_curve_miniature_with_edit(
     let button_response = lookup_curve_miniature(curve, id, ui);
     if button_response.clicked() {
         ui.memory_mut(|mem| {
-            let editor = LookupCurveEguiEditor::encompassing_curve(curve);
             mem.data.insert_temp(
                 editor_id,
-                Arc::new(Mutex::new(editor)),
+                Arc::new(Mutex::new(LookupCurveEguiEditor::encompassing_curve(curve))),
             )
         });
     }
