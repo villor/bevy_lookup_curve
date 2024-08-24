@@ -52,33 +52,34 @@ impl LookupCurveEguiEditor {
         }
     }
 
-    pub fn encompassing_curve(curve: &LookupCurve) -> Self {
-        let mut min_opt: Option<Vec2> = None;
-        let mut max_opt: Option<Vec2> = None;
-        for knot in curve.knots() {
-            if let Some(min) = min_opt {
-                min_opt = Some(min.min(knot.position));
-            } else {
-                min_opt = Some(knot.position);
-            }
+    /// Constructs a [LookupCurveEguiEditor] with the viewport adjusted to fit the supplied [LookupCurve].
+    pub fn fitted_to_curve(curve: &LookupCurve) -> Self {
+        let mut editor = LookupCurveEguiEditor::default();
+        editor.fit_to_curve(curve);
+        editor
+    }
 
-            if let Some(max) = max_opt {
-                max_opt = Some(max.max(knot.position));
-            } else {
-                max_opt = Some(knot.position);
+    /// Fits the editor viewport to the supplied [LookupCurve] by updating scale and offset.
+    pub fn fit_to_curve(&mut self, curve: &LookupCurve) {
+        let knots = curve.knots();
+        let (min, max) = match knots.len() {
+            0 => (Vec2::ZERO, Vec2::ONE),
+            1 => {
+                let pos = knots[0].position;
+                let padding = Vec2::splat(0.5);
+                (pos - padding, pos + padding)
             }
-        }
+            _ => knots
+                .iter()
+                .fold((Vec2::INFINITY, Vec2::NEG_INFINITY), |(min, max), knot| {
+                    (min.min(knot.position), max.max(knot.position))
+                }),
+        };
 
-        let min = min_opt.unwrap_or(Vec2::new(0.0, 0.0));
-        let max = max_opt.unwrap_or(Vec2::new(1.0, 1.0));
         let diff = max - min;
 
-        // TODO
-        LookupCurveEguiEditor {
-            offset: min - 0.2 * diff,
-            scale: diff * 1.4,
-            ..Default::default()
-        }
+        self.offset = min - 0.2 * diff;
+        self.scale = diff * 1.4;
     }
 
     // TODO : Rename these functions and make them clearer

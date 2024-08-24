@@ -203,7 +203,7 @@ fn lookup_curve_miniature_with_edit(
         ui.memory_mut(|mem| {
             mem.data.insert_temp(
                 editor_id,
-                Arc::new(Mutex::new(LookupCurveEguiEditor::encompassing_curve(curve))),
+                Arc::new(Mutex::new(LookupCurveEguiEditor::fitted_to_curve(curve))),
             )
         });
     }
