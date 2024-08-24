@@ -8,7 +8,6 @@ use bevy_app::{App, Plugin};
 use bevy_asset::{Assets, Handle};
 use bevy_inspector_egui::inspector_egui_impls::InspectorEguiImpl;
 use bevy_inspector_egui::reflect_inspector::InspectorUi;
-use bevy_math::Vec2;
 use bevy_reflect::{Reflect, TypeRegistry};
 
 pub(crate) struct InspectorPlugin;
