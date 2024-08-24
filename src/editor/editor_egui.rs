@@ -74,7 +74,7 @@ impl LookupCurveEguiEditor {
         let diff = max - min;
 
         // TODO
-        LookupCurveEguiEditor{
+        LookupCurveEguiEditor {
             offset: min - 0.2 * diff,
             scale: diff * 1.4,
             ..Default::default()
