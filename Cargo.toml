@@ -61,6 +61,11 @@ name = "egui_only"
 path = "examples/egui_only.rs"
 required-features = ["editor_egui", "ron"]
 
+[[example]]
+name = "inspector_egui"
+path = "examples/inspector_egui.rs"
+required-features = ["inspector-egui"]
+
 # [[bench]]
 # name = "lookup_curve"
 # path = "benches/lookup_curve.rs"
