@@ -11,7 +11,7 @@ version = "0.4.1"
 edition = "2021"
 
 [features]
-default = ['editor_bevy', 'bevy_reflect']
+default = ['editor_bevy', 'bevy_reflect', 'inspector-egui']
 serialize = ['dep:serde', 'bevy_math/serialize']
 ron = ['serialize', 'dep:ron', 'dep:thiserror']
 bevy_reflect = ['dep:bevy_reflect', 'bevy_math/bevy_reflect', 'bevy_app?/bevy_reflect', 'bevy_ecs?/bevy_reflect']
@@ -60,6 +60,11 @@ required-features = ["editor_egui"]
 name = "egui_only"
 path = "examples/egui_only.rs"
 required-features = ["editor_egui", "ron"]
+
+[[example]]
+name = "inspector_egui"
+path = "examples/inspector_egui.rs"
+required-features = ["inspector-egui"]
 
 # [[bench]]
 # name = "lookup_curve"

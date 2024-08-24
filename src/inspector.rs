@@ -8,6 +8,7 @@ use bevy_app::{App, Plugin};
 use bevy_asset::{Assets, Handle};
 use bevy_inspector_egui::inspector_egui_impls::InspectorEguiImpl;
 use bevy_inspector_egui::reflect_inspector::InspectorUi;
+use bevy_math::Vec2;
 use bevy_reflect::{Reflect, TypeRegistry};
 
 pub(crate) struct InspectorPlugin;
@@ -201,9 +202,10 @@ fn lookup_curve_miniature_with_edit(
     let button_response = lookup_curve_miniature(curve, id, ui);
     if button_response.clicked() {
         ui.memory_mut(|mem| {
+            let editor = LookupCurveEguiEditor::encompassing_curve(curve);
             mem.data.insert_temp(
                 editor_id,
-                Arc::new(Mutex::new(LookupCurveEguiEditor::default())),
+                Arc::new(Mutex::new(editor)),
             )
         });
     }

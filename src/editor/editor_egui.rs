@@ -52,6 +52,35 @@ impl LookupCurveEguiEditor {
         }
     }
 
+    pub fn encompassing_curve(curve: &LookupCurve) -> Self {
+        let mut min_opt: Option<Vec2> = None;
+        let mut max_opt: Option<Vec2> = None;
+        for knot in curve.knots() {
+            if let Some(min) = min_opt {
+                min_opt = Some(min.min(knot.position));
+            } else {
+                min_opt = Some(knot.position);
+            }
+
+            if let Some(max) = max_opt {
+                max_opt = Some(max.max(knot.position));
+            } else {
+                max_opt = Some(knot.position);
+            }
+        }
+
+        let min = min_opt.unwrap_or(Vec2::new(0.0, 0.0));
+        let max = max_opt.unwrap_or(Vec2::new(1.0, 1.0));
+        let diff = max - min;
+
+        // TODO
+        LookupCurveEguiEditor{
+            offset: min - 0.2 * diff,
+            scale: diff * 1.4,
+            ..Default::default()
+        }
+    }
+
     // TODO : Rename these functions and make them clearer
     // Move to a paintcontext? with access to to_screeen / to_canvas
 
