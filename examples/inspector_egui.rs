@@ -1,3 +1,4 @@
+//! This example demonstrates the usage of the `inspector-egui` feature.
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::{AssetInspectorPlugin, ResourceInspectorPlugin};
 
