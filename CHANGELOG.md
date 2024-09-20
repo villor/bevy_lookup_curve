@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.5.0] - 20-Sep-2024
+
+### Added
+- `inspector_egui` example
+- `LookupCurveEguiEditor::fit_to_curve`: Adjusts the editor viewport to contain a curve.
+- `LookupCurveEguiEditor::fitted_to_curve`: Same as above but as a constructor.
+- A button in the egui editor to re-fit the curve
+
+### Updated
+- bevy_egui to 0.29
+- bevy-inspector-egui to 0.26
+
+### Contributors
+- [@ArneCJacobs](https://github.com/ArneCJacobs)
+- [@TotalKrill](https://github.com/TotalKrill)
+
 ## [0.4.1] - 02-Aug-2024
 
 Fixed build errors on some features.
