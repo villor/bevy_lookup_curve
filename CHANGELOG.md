@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.5.1] - 20-Sep-2024
+Fix docs.rs build
+
 ## [0.5.0] - 20-Sep-2024
 
 ### Added
