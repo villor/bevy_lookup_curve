@@ -17,9 +17,10 @@ ron = ['serialize', 'dep:ron', 'dep:thiserror']
 bevy_reflect = ['dep:bevy_reflect', 'bevy_math/bevy_reflect', 'bevy_app?/bevy_reflect', 'bevy_ecs?/bevy_reflect']
 bevy_app = ['dep:bevy_app', 'dep:bevy_log']
 bevy_asset = ['ron', 'bevy_app', 'bevy_reflect', 'dep:bevy_asset']
+bevy_egui = ['dep:bevy_egui', 'dep:bevy_winit', 'bevy_winit/x11']
 editor_egui = ['dep:egui']
-editor_bevy = ['bevy_app', 'bevy_ecs', 'bevy_asset', 'editor_egui', 'dep:bevy_egui']
-inspector-egui = ['bevy_reflect', 'bevy_app', 'bevy_ecs', 'bevy_asset', 'editor_egui', 'dep:bevy-inspector-egui', 'dep:egui_plot']
+editor_bevy = ['bevy_app', 'bevy_ecs', 'bevy_asset', 'bevy_egui', 'editor_egui']
+inspector-egui = ['bevy_reflect', 'bevy_app', 'bevy_ecs', 'bevy_asset', 'bevy_egui', 'editor_egui', 'dep:bevy-inspector-egui', 'dep:egui_plot']
 
 [dependencies]
 bevy_math = { version = "0.14", default-features = false }
@@ -28,6 +29,7 @@ bevy_app = { version = "0.14", default-features = false, optional = true }
 bevy_ecs = { version = "0.14", default-features = false, optional = true }
 bevy_asset = { version = "0.14", optional = true }
 bevy_log = { version = "0.14", default-features = false, optional = true }
+bevy_winit = { version = "0.14", default-features = false, optional = true }
 
 thiserror = { version = "1.0", optional = true }
 serde = { version = "1.0", optional = true }
