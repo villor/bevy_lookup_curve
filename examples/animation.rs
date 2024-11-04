@@ -33,13 +33,10 @@ struct AnimationCache(LookupCache);
 struct EditorWindow(LookupCurveEguiEditor);
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
     commands.spawn((
-        SpriteBundle {
-            texture: asset_server.load("bevy_icon.png"),
-            transform: Transform::from_xyz(0., -200., 0.).with_scale(Vec3::splat(0.5)),
-            ..default()
-        },
+        Sprite::from_image(asset_server.load("bevy_icon.png")),
+        Transform::from_xyz(0., -200., 0.).with_scale(Vec3::splat(0.5)),
         AnimateX {
             from: -400.0,
             to: 400.0,
