@@ -79,7 +79,7 @@ fn update(
     for (entity, mut transform, mut animate, mut curve, mut cache, mut editor) in animate.iter_mut()
     {
         // update t
-        animate.t += animate.dir * animate.speed * time.delta_seconds();
+        animate.t += animate.dir * animate.speed * time.delta_secs();
         if animate.t >= 1.0 {
             animate.dir = -1.0;
             animate.t = 1.0;
