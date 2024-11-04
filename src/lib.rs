@@ -7,33 +7,35 @@ use knot_search::KnotSearch;
 #[cfg(feature = "bevy_asset")]
 pub mod asset;
 
-#[cfg(feature = "editor_egui")]
-pub mod editor;
+//#[cfg(feature = "editor_egui")]
+//pub mod editor;
 
-#[cfg(feature = "inspector-egui")]
-mod inspector;
+// #[cfg(feature = "inspector-egui")]
+// mod inspector;
 
 /// Registers the asset loader and editor components
-#[cfg(any(
-    feature = "bevy_asset",
-    feature = "editor_bevy",
-    feature = "inspector-egui"
-))]
+// #[cfg(any(
+//     feature = "bevy_asset",
+//     feature = "editor_bevy",
+//     feature = "inspector-egui"
+// ))]
+#[cfg(feature = "bevy_asset")]
 pub struct LookupCurvePlugin;
 
-#[cfg(any(
-    feature = "bevy_asset",
-    feature = "editor_bevy",
-    feature = "inspector-egui"
-))]
+// #[cfg(any(
+//     feature = "bevy_asset",
+//     feature = "editor_bevy",
+//     feature = "inspector-egui"
+// ))]
+#[cfg(feature = "bevy_asset")]
 impl bevy_app::Plugin for LookupCurvePlugin {
     fn build(&self, app: &mut bevy_app::App) {
         #[cfg(feature = "bevy_asset")]
         app.add_plugins(asset::AssetPlugin);
-        #[cfg(feature = "editor_bevy")]
-        app.add_plugins(editor::EditorPlugin);
-        #[cfg(feature = "inspector-egui")]
-        app.add_plugins(inspector::InspectorPlugin);
+        // #[cfg(feature = "editor_bevy")]
+        // app.add_plugins(editor::EditorPlugin);
+        // #[cfg(feature = "inspector-egui")]
+        // app.add_plugins(inspector::InspectorPlugin);
     }
 }
 
