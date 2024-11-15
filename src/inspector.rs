@@ -6,9 +6,11 @@ use std::{
 use crate::{editor::LookupCurveEguiEditor, LookupCache, LookupCurve};
 use bevy_app::{App, Plugin};
 use bevy_asset::{Assets, Handle};
-use bevy_inspector_egui::inspector_egui_impls::InspectorEguiImpl;
 use bevy_inspector_egui::reflect_inspector::InspectorUi;
-use bevy_reflect::{Reflect, TypeRegistry};
+use bevy_inspector_egui::{
+    inspector_egui_impls::InspectorEguiImpl, reflect_inspector::ProjectorReflect,
+};
+use bevy_reflect::{PartialReflect, TypeRegistry};
 
 pub(crate) struct InspectorPlugin;
 
@@ -44,8 +46,8 @@ type InspectorEguiImplFnMany = for<'a> fn(
     &dyn Any,
     egui::Id,
     InspectorUi<'_, '_>,
-    &mut [&mut dyn Reflect],
-    &dyn Fn(&mut dyn Reflect) -> &mut dyn Reflect,
+    &mut [&mut dyn PartialReflect],
+    &dyn ProjectorReflect,
 ) -> bool;
 
 fn add_raw<T: 'static>(
@@ -65,8 +67,8 @@ fn many_unimplemented(
     _options: &dyn Any,
     _id: egui::Id,
     _env: InspectorUi<'_, '_>,
-    _values: &mut [&mut dyn Reflect],
-    _projector: &dyn Fn(&mut dyn Reflect) -> &mut dyn Reflect,
+    _values: &mut [&mut dyn PartialReflect],
+    _projector: &dyn ProjectorReflect,
 ) -> bool {
     ui.label("LookupCurve does not support multi-editing.");
     false
