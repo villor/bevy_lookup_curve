@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.6.0] - 03-Dec-2024
+Update to Bevy 0.15 🥳
+
 ## [0.5.1] - 20-Sep-2024
 Fix docs.rs build
 
