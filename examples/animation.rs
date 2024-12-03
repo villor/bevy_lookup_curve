@@ -33,13 +33,10 @@ struct AnimationCache(LookupCache);
 struct EditorWindow(LookupCurveEguiEditor);
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
     commands.spawn((
-        SpriteBundle {
-            texture: asset_server.load("bevy_icon.png"),
-            transform: Transform::from_xyz(0., -200., 0.).with_scale(Vec3::splat(0.5)),
-            ..default()
-        },
+        Sprite::from_image(asset_server.load("bevy_icon.png")),
+        Transform::from_xyz(0., -200., 0.).with_scale(Vec3::splat(0.5)),
         AnimateX {
             from: -400.0,
             to: 400.0,
@@ -82,7 +79,7 @@ fn update(
     for (entity, mut transform, mut animate, mut curve, mut cache, mut editor) in animate.iter_mut()
     {
         // update t
-        animate.t += animate.dir * animate.speed * time.delta_seconds();
+        animate.t += animate.dir * animate.speed * time.delta_secs();
         if animate.t >= 1.0 {
             animate.dir = -1.0;
             animate.t = 1.0;

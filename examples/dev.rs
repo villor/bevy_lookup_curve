@@ -56,7 +56,7 @@ fn move_sample(
             } else if dev_state.sample <= -0.5 {
                 dev_state.sample_dir = 1.0;
             }
-            dev_state.sample += time.delta_seconds() * 0.3 * dev_state.sample_dir;
+            dev_state.sample += time.delta_secs() * 0.3 * dev_state.sample_dir;
         }
         editor.sample = Some(dev_state.sample)
     }
