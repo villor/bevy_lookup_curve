@@ -339,7 +339,7 @@ impl LookupCurve {
     }
 
     #[cfg(feature = "ron")]
-    /// Serializes the lookup curve and saves it as a RON file
+    /// Loads a [`LookupCurve`] from a RON file.
     pub fn load_from_file(path: &str) -> Result<Self, LookupCurveLoadError> {
         let bytes = std::fs::read(path)?;
         let lookup_curve = ron::de::from_bytes::<LookupCurve>(&bytes)?;
@@ -347,7 +347,7 @@ impl LookupCurve {
     }
 
     #[cfg(feature = "ron")]
-    /// Serializes the lookup curve and saves it as a RON file
+    /// Serializes the [`LookupCurve`] and saves it as a RON file
     pub fn save_to_file(&self, path: &str) -> Result<(), LookupCurveSaveError> {
         let config = ron::ser::PrettyConfig::new()
             .new_line("\n".to_string())
