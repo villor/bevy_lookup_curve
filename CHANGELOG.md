@@ -1,5 +1,11 @@
 # Changelog
 
+## [UNRELEASED] - TBD
+
+### Updated
+- egui to `0.30`
+- bevy_inspector_egui to `0.29`
+
 ## [0.6.0] - 03-Dec-2024
 Update to Bevy 0.15 🥳
 
