@@ -7,7 +7,7 @@ homepage = "https://crates.io/crates/bevy_lookup_curve"
 documentation = "https://docs.rs/bevy_lookup_curve"
 repository = "https://github.com/villor/bevy_lookup_curve"
 readme = "README.md"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 
 [features]

@@ -1,6 +1,6 @@
 # Changelog
 
-## [UNRELEASED] - TBD
+## [0.7.0] - 31-Jan-2025
 
 ### Added
 - Implement `bevy_math::Curve<f32>` for `LookupCurve`.

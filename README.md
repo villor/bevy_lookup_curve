@@ -18,9 +18,10 @@ Editable lookup curve for Bevy that can be used for many things, for example:
 If you have used AnimationCurve in Unity, this would be an attempt at something similar for Bevy.
 
 ## Features
-- [x] LookupCurve type with modifiable knots and tangents. Three types of interpolation: Constant, Linear, and Cubic
+- [x] `LookupCurve` type with modifiable knots and tangents. Three types of interpolation: Constant, Linear, and Cubic
+- [x] `LookupCurve` implements `bevy_math::Curve<f32>` to fit into the ecosystem, giving access to resampling and other conveniences.
 - [x] Asset loader and save functionality
-- [x] Egui based editor
+- [x] `egui`-based editor
 - [x] Integration with [bevy-inspector-egui](https://github.com/jakobhellermann/bevy-inspector-egui) for quick and easy tweaking
 
 https://github.com/villor/bevy_lookup_curve/assets/7102243/180aed95-ca9a-4e3b-97c4-2516055ea648
@@ -42,7 +43,7 @@ See [examples](https://github.com/villor/bevy_lookup_curve/tree/main/examples) f
 ## Bevy support
 |bevy|bevy_lookup_curve|
 |---|---|
-|0.15|0.6|
+|0.15|0.6-0.7|
 |0.14|0.3-0.5|
 |0.13|0.1-0.2|
 
@@ -54,7 +55,7 @@ Just set `default-features = false`. And enable `serialize`, `ron`, and/or `edit
 See the `egui_only` example. It can also be used as a standalone curve editor.
 
 ## Contributing
-Contributions are welcome. Feel free to make a PR! 
+Contributions are welcome. Feel free to make a PR!
 
 ## License
 
