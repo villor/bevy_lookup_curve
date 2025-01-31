@@ -2,6 +2,9 @@
 
 ## [UNRELEASED] - TBD
 
+### Added
+- Implement `bevy_math::Curve<f32>` for `LookupCurve`.
+
 ### Updated
 - egui to `0.30`
 - bevy_inspector_egui to `0.29`

@@ -1,4 +1,4 @@
-use bevy_math::Vec2;
+use bevy_math::{curve::Interval, Curve, Vec2};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 pub mod knot_search;
@@ -482,6 +482,26 @@ impl LookupCurve {
                 }
             }
         }
+    }
+}
+
+impl Curve<f32> for LookupCurve {
+    #[inline]
+    fn domain(&self) -> Interval {
+        if self.knots.is_empty() || self.knots.len() == 1 {
+            return Interval::EVERYWHERE;
+        }
+
+        Interval::new(
+            self.knots[0].position.x,
+            self.knots[self.knots.len() - 1].position.x,
+        )
+        .unwrap()
+    }
+
+    #[inline]
+    fn sample_unchecked(&self, t: f32) -> f32 {
+        self.lookup(t)
     }
 }
 
