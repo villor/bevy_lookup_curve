@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0] - 17-Mar-2025
+
+### Updated
+- egui to `0.31`
+- bevy_egui to `0.33`
+- bevy_inspector_egui to `0.30`
+
 ## [0.7.0] - 31-Jan-2025
 
 ### Added
