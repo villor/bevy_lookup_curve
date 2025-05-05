@@ -1,11 +1,31 @@
 # Changelog
 
+## [0.9.0] - 05-May-2025
+
+Bevy 0.16 🥳
+
+### Updated
+- bevy to `0.16`
+- bevy_egui to `0.34`
+- thiserror to `2`
+- bevy_inspector_egui to `0.31`
+- egui_plot to `0.32`
+
+### Migration guide
+`bevy_egui` no longer recommends adding `EguiPlugin` from public plugins. `EguiPlugin` now has to be added by the consumer for the editor to work:
+```rust
+app.add_plugins(EguiPlugin { enable_multipass_for_primary_context: true })
+```
+
 ## [0.8.0] - 17-Mar-2025
 
 ### Updated
 - egui to `0.31`
 - bevy_egui to `0.33`
 - bevy_inspector_egui to `0.30`
+
+#### Contributors
+- [@steflon19](https://github.com/steflon19)
 
 ## [0.7.0] - 31-Jan-2025
 
