@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::{AssetInspectorPlugin, ResourceInspectorPlugin};
 
 use bevy_lookup_curve::{editor::LookupCurveEditor, LookupCurve, LookupCurvePlugin};
@@ -6,6 +7,9 @@ use bevy_lookup_curve::{editor::LookupCurveEditor, LookupCurve, LookupCurvePlugi
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugins(EguiPlugin {
+            enable_multipass_for_primary_context: true,
+        })
         .add_plugins(LookupCurvePlugin)
         .add_plugins(AssetInspectorPlugin::<LookupCurve>::default())
         .register_type::<LookupCurveDevState>()
@@ -49,7 +53,7 @@ fn move_sample(
     mut editor: Query<&mut LookupCurveEditor>,
     time: Res<Time>,
 ) {
-    if let Ok(mut editor) = editor.get_single_mut() {
+    if let Ok(mut editor) = editor.single_mut() {
         if dev_state.move_sample {
             if dev_state.sample >= 1.5 {
                 dev_state.sample_dir = -1.0;

@@ -182,7 +182,8 @@ fn lookup_curve_miniature(curve: &LookupCurve, id: egui::Id, ui: &mut egui::Ui) 
                 )
             };
 
-            let line = egui_plot::Line::new(points).color(egui::Color32::GREEN);
+            let line =
+                egui_plot::Line::new(curve.name_or_default(), points).color(egui::Color32::GREEN);
             plot_ui.line(line);
         });
 

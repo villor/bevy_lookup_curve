@@ -1,7 +1,7 @@
-use bevy_app::{App, Plugin, Update};
+use bevy_app::{App, Plugin};
 use bevy_asset::{Assets, Handle};
 use bevy_ecs::prelude::{Component, Entity, Query, ResMut};
-use bevy_egui::{EguiContexts, EguiPlugin};
+use bevy_egui::{EguiContextPass, EguiContexts};
 
 use super::LookupCurveEguiEditor;
 use crate::LookupCurve;
@@ -10,10 +10,7 @@ pub(crate) struct EditorPlugin;
 
 impl Plugin for EditorPlugin {
     fn build(&self, app: &mut App) {
-        if !app.is_plugin_added::<EguiPlugin>() {
-            app.add_plugins(EguiPlugin);
-        }
-        app.add_systems(Update, lookup_curve_editor_ui);
+        app.add_systems(EguiContextPass, lookup_curve_editor_ui);
     }
 }
 

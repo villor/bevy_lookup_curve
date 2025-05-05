@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_egui::{EguiContexts, EguiPlugin};
+use bevy_egui::{EguiContextPass, EguiContexts, EguiPlugin};
 
 use bevy_lookup_curve::{
     editor::LookupCurveEguiEditor, Knot, KnotInterpolation, LookupCache, LookupCurve,
@@ -8,9 +8,12 @@ use bevy_lookup_curve::{
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugins(EguiPlugin)
+        .add_plugins(EguiPlugin {
+            enable_multipass_for_primary_context: true,
+        })
         .add_systems(Startup, setup)
-        .add_systems(Update, update)
+        .add_systems(Update, animate)
+        .add_systems(EguiContextPass, editor_ui)
         .run();
 }
 
@@ -64,20 +67,16 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     ));
 }
 
-fn update(
+fn animate(
     mut animate: Query<(
-        Entity,
         &mut Transform,
         &mut AnimateX,
-        &mut AnimateWithCurve,
+        &AnimateWithCurve,
         &mut AnimationCache,
-        &mut EditorWindow,
     )>,
-    mut contexts: EguiContexts,
     time: Res<Time>,
 ) {
-    for (entity, mut transform, mut animate, mut curve, mut cache, mut editor) in animate.iter_mut()
-    {
+    for (mut transform, mut animate, curve, mut cache) in animate.iter_mut() {
         // update t
         animate.t += animate.dir * animate.speed * time.delta_secs();
         if animate.t >= 1.0 {
@@ -92,7 +91,14 @@ fn update(
         // animate sprite
         transform.translation.x = animate.from
             + (animate.to - animate.from) * curve.0.lookup_cached(animate.t, &mut cache.0);
+    }
+}
 
+fn editor_ui(
+    mut animate: Query<(Entity, &AnimateX, &mut AnimateWithCurve, &mut EditorWindow)>,
+    mut contexts: EguiContexts,
+) {
+    for (entity, animate, mut curve, mut editor) in animate.iter_mut() {
         // draw editor
         editor
             .0
