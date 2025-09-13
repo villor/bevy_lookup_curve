@@ -1,7 +1,7 @@
 use bevy_math::Vec2;
 use egui::{
-    emath, epaint::CubicBezierShape, Color32, Frame, Id, Painter, Pos2, Rect, Sense, Shape, Stroke,
-    Ui,
+    Color32, Frame, Id, Painter, Pos2, Rect, Sense, Shape, Stroke, Ui, emath,
+    epaint::CubicBezierShape,
 };
 
 use crate::{Knot, KnotInterpolation, LookupCurve, TangentMode, TangentSide};

@@ -1,5 +1,5 @@
 use bevy_app::{App, Plugin};
-use bevy_asset::{io::Reader, AssetApp, AssetLoader, LoadContext};
+use bevy_asset::{AssetApp, AssetLoader, LoadContext, io::Reader};
 
 use crate::{LookupCurve, LookupCurveLoadError};
 

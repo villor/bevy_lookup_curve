@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::{editor::LookupCurveEguiEditor, LookupCache, LookupCurve};
+use crate::{LookupCache, LookupCurve, editor::LookupCurveEguiEditor};
 use bevy_app::{App, Plugin};
 use bevy_asset::{Assets, Handle};
 use bevy_inspector_egui::reflect_inspector::InspectorUi;

@@ -1,6 +1,6 @@
 use bevy_lookup_curve::*;
 use bevy_math::Vec2;
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
 
 pub fn linear(c: &mut Criterion) {
     let curve = LookupCurve::new(vec![

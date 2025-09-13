@@ -1,4 +1,4 @@
-use bevy_math::{curve::Interval, Curve, Vec2};
+use bevy_math::{Curve, Vec2, curve::Interval};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 pub mod knot_search;
@@ -15,12 +15,12 @@ mod inspector;
 
 /// Re-exports of the most commonly used items for convenience
 pub mod prelude {
+    #[cfg(feature = "bevy_app")]
+    pub use crate::LookupCurvePlugin;
     #[cfg(feature = "editor_bevy")]
     pub use crate::editor::LookupCurveEditor;
     #[cfg(feature = "editor_egui")]
     pub use crate::editor::LookupCurveEguiEditor;
-    #[cfg(feature = "bevy_app")]
-    pub use crate::LookupCurvePlugin;
     pub use crate::{Knot, KnotInterpolation, LookupCache, LookupCurve, Tangent, TangentMode};
 }
 
