@@ -51,7 +51,7 @@ bevy_winit = { version = "0.17.0-rc.1", default-features = false, optional = tru
 
 thiserror = { version = "2", optional = true }
 serde = { version = "1", optional = true }
-ron = { version = "0.8", optional = true }
+ron = { version = "0.10", optional = true }
 
 egui = { version = "0.31", optional = true }
 bevy_egui = { version = "0.34", default-features = false, features = [
@@ -67,7 +67,7 @@ egui_plot = { version = "0.32", optional = true }
 bevy = "0.17.0-rc.1"
 #bevy-inspector-egui = { version = "0.31" }
 criterion = "0.5.1"
-rand = "0.8"
+rand = "0.9"
 eframe = "0.31"
 
 [[example]]
