@@ -7,9 +7,7 @@ use bevy_lookup_curve::prelude::*;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugins(EguiPlugin {
-            enable_multipass_for_primary_context: true,
-        })
+        .add_plugins(EguiPlugin::default())
         .add_plugins(LookupCurvePlugin)
         .add_plugins(AssetInspectorPlugin::<LookupCurve>::default())
         .register_type::<LookupCurveDevState>()
@@ -29,6 +27,8 @@ struct LookupCurveDevState {
 }
 
 fn setup(mut commands: Commands, assets: Res<AssetServer>) {
+    commands.spawn(Camera2d);
+
     let handle = assets.load("example.curve.ron");
 
     commands.spawn(LookupCurveEditor {

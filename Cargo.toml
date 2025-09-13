@@ -11,8 +11,7 @@ version = "0.9.0"
 edition = "2024"
 
 [features]
-default = ['bevy_asset']
-#default = ['editor_bevy', 'bevy_reflect']
+default = ['editor_bevy', 'bevy_reflect']
 serialize = ['dep:serde', 'bevy_math/serialize']
 ron = ['serialize', 'dep:ron', 'dep:thiserror']
 bevy_reflect = [
@@ -53,22 +52,22 @@ thiserror = { version = "2", optional = true }
 serde = { version = "1", optional = true }
 ron = { version = "0.10", optional = true }
 
-egui = { version = "0.31", optional = true }
-bevy_egui = { version = "0.34", default-features = false, features = [
+egui = { version = "0.32", optional = true, git = "https://github.com/pindash-io/egui.git", branch = "accesskit" }
+bevy_egui = { version = "0.37", default-features = false, features = [
     "render",
-], optional = true }
+], optional = true, git = "https://github.com/villor/bevy_egui.git", branch = "bevy-0.17" }
 
-bevy-inspector-egui = { version = "0.31", optional = true, default-features = false, features = [
+bevy-inspector-egui = { version = "0.34", optional = true, default-features = false, features = [
     "bevy_render",
-] }
-egui_plot = { version = "0.32", optional = true }
+], git = "https://github.com/villor/bevy-inspector-egui.git", branch = "bevy-0.17" }
+egui_plot = { version = "0.33", optional = true }
 
 [dev-dependencies]
 bevy = "0.17.0-rc.1"
-#bevy-inspector-egui = { version = "0.31" }
+bevy-inspector-egui = { version = "0.34", git = "https://github.com/villor/bevy-inspector-egui.git", branch = "bevy-0.17" }
 criterion = "0.5.1"
 rand = "0.9"
-eframe = "0.31"
+eframe = { version = "0.32", git = "https://github.com/pindash-io/egui.git", branch = "accesskit" }
 
 [[example]]
 name = "dev"

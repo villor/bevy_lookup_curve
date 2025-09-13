@@ -1,17 +1,15 @@
 use bevy::prelude::*;
-use bevy_egui::{EguiContextPass, EguiContexts, EguiPlugin};
+use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass};
 
 use bevy_lookup_curve::prelude::*;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugins(EguiPlugin {
-            enable_multipass_for_primary_context: true,
-        })
+        .add_plugins(EguiPlugin::default())
         .add_systems(Startup, setup)
         .add_systems(Update, animate)
-        .add_systems(EguiContextPass, editor_ui)
+        .add_systems(EguiPrimaryContextPass, editor_ui)
         .run();
 }
 
@@ -95,11 +93,12 @@ fn animate(
 fn editor_ui(
     mut animate: Query<(Entity, &AnimateX, &mut AnimateWithCurve, &mut EditorWindow)>,
     mut contexts: EguiContexts,
-) {
+) -> Result {
     for (entity, animate, mut curve, mut editor) in animate.iter_mut() {
         // draw editor
         editor
             .0
-            .ui_window(contexts.ctx_mut(), entity, &mut curve.0, Some(animate.t));
+            .ui_window(contexts.ctx_mut()?, entity, &mut curve.0, Some(animate.t));
     }
+    Ok(())
 }

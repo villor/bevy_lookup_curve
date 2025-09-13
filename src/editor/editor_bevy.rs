@@ -1,7 +1,7 @@
 use bevy_app::{App, Plugin};
 use bevy_asset::{Assets, Handle};
-use bevy_ecs::prelude::{Component, Entity, Query, ResMut};
-use bevy_egui::{EguiContextPass, EguiContexts};
+use bevy_ecs::prelude::{Component, Entity, Query, ResMut, Result};
+use bevy_egui::{EguiContexts, EguiPrimaryContextPass};
 
 use super::LookupCurveEguiEditor;
 use crate::LookupCurve;
@@ -10,7 +10,7 @@ pub(crate) struct EditorPlugin;
 
 impl Plugin for EditorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(EguiContextPass, lookup_curve_editor_ui);
+        app.add_systems(EguiPrimaryContextPass, lookup_curve_editor_ui);
     }
 }
 
@@ -51,13 +51,14 @@ fn lookup_curve_editor_ui(
     mut editors: Query<(Entity, &mut LookupCurveEditor)>,
     mut contexts: EguiContexts,
     mut curves: ResMut<Assets<LookupCurve>>,
-) {
+) -> Result {
     for (entity, mut editor) in &mut editors {
         if let Some(curve) = curves.get_mut(&editor.curve_handle) {
             let sample = editor.sample;
             editor
                 .egui_editor
-                .ui_window(contexts.ctx_mut(), entity, curve, sample);
+                .ui_window(contexts.ctx_mut()?, entity, curve, sample);
         }
     }
+    Ok(())
 }

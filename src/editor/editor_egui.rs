@@ -207,7 +207,7 @@ impl LookupCurveEguiEditor {
                         ..Default::default()
                     });
                     changed = true;
-                    ui.close_menu();
+                    ui.close();
                 }
             });
 
@@ -276,7 +276,8 @@ impl LookupCurveEguiEditor {
                 let interact_rect =
                     Rect::from_center_size(point_in_screen, emath::Vec2::splat(2.0 * knot_radius));
                 let interact_id = response.id.with(knot.id);
-                let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
+                let interact_response =
+                    ui.interact(interact_rect, interact_id, Sense::click_and_drag());
 
                 if interact_response.dragged_by(egui::PointerButton::Primary) {
                     modified_knot = Some((
@@ -305,7 +306,7 @@ impl LookupCurveEguiEditor {
                                 ..*knot
                             },
                         ));
-                        ui.close_menu();
+                        ui.close();
                     }
                     if ui
                         .radio(
@@ -321,7 +322,7 @@ impl LookupCurveEguiEditor {
                                 ..*knot
                             },
                         ));
-                        ui.close_menu();
+                        ui.close();
                     }
                     if ui
                         .radio(
@@ -337,7 +338,7 @@ impl LookupCurveEguiEditor {
                                 ..*knot
                             },
                         ));
-                        ui.close_menu();
+                        ui.close();
                     }
 
                     ui.label("Position");
@@ -381,7 +382,7 @@ impl LookupCurveEguiEditor {
                     ui.label("Actions");
                     if ui.button("Delete knot").clicked() {
                         deleted_knot_index = Some(i);
-                        ui.close_menu();
+                        ui.close();
                     }
                 });
 
@@ -427,7 +428,8 @@ impl LookupCurveEguiEditor {
                         emath::Vec2::splat(2.0 * knot_radius),
                     );
                     let interact_id = interact_id.with(side);
-                    let interact_response = ui.interact(interact_rect, interact_id, Sense::drag());
+                    let interact_response =
+                        ui.interact(interact_rect, interact_id, Sense::click_and_drag());
 
                     if interact_response.dragged_by(egui::PointerButton::Primary) {
                         let mut c = self.canvas_to_curve(
@@ -461,7 +463,7 @@ impl LookupCurveEguiEditor {
                         {
                             modified_knot =
                                 Some((i, knot.with_tangent_mode(side, TangentMode::Free)));
-                            ui.close_menu();
+                            ui.close();
                         }
                         if ui
                             .radio(matches!(tangent.mode, TangentMode::Aligned), "Aligned")
@@ -469,7 +471,7 @@ impl LookupCurveEguiEditor {
                         {
                             modified_knot =
                                 Some((i, knot.with_tangent_mode(side, TangentMode::Aligned)));
-                            ui.close_menu();
+                            ui.close();
                         }
 
                         ui.label("Slope:");
