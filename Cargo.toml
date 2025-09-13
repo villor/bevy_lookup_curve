@@ -8,7 +8,7 @@ documentation = "https://docs.rs/bevy_lookup_curve"
 repository = "https://github.com/villor/bevy_lookup_curve"
 readme = "README.md"
 version = "0.9.0"
-edition = "2021"
+edition = "2024"
 
 [features]
 default = ['bevy_asset']
