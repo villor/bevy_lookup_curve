@@ -2,7 +2,7 @@
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::{AssetInspectorPlugin, ResourceInspectorPlugin};
 
-use bevy_lookup_curve::{LookupCurve, LookupCurvePlugin};
+use bevy_lookup_curve::prelude::*;
 
 fn main() {
     App::new()

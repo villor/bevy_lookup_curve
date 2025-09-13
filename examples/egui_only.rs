@@ -1,5 +1,6 @@
-use bevy_lookup_curve::{editor::LookupCurveEguiEditor, LookupCurve};
 use eframe::egui;
+
+use bevy_lookup_curve::prelude::*;
 
 /// This example has no dependencies on bevy except bevy_math
 fn main() -> eframe::Result {

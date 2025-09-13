@@ -1,9 +1,7 @@
 use bevy::prelude::*;
 use bevy_egui::{EguiContextPass, EguiContexts, EguiPlugin};
 
-use bevy_lookup_curve::{
-    editor::LookupCurveEguiEditor, Knot, KnotInterpolation, LookupCache, LookupCurve,
-};
+use bevy_lookup_curve::prelude::*;
 
 fn main() {
     App::new()

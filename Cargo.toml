@@ -65,7 +65,7 @@ egui_plot = { version = "0.32", optional = true }
 
 [dev-dependencies]
 bevy = "0.17.0-rc.1"
-bevy-inspector-egui = { version = "0.31" }
+#bevy-inspector-egui = { version = "0.31" }
 criterion = "0.5.1"
 rand = "0.8"
 eframe = "0.31"
@@ -74,6 +74,10 @@ eframe = "0.31"
 name = "dev"
 path = "examples/dev.rs"
 required-features = ["editor_bevy", "bevy_reflect"]
+
+[[example]]
+name = "console"
+path = "examples/console.rs"
 
 [[example]]
 name = "animation"
