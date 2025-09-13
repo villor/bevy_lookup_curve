@@ -11,7 +11,8 @@ version = "0.9.0"
 edition = "2021"
 
 [features]
-default = ['editor_bevy', 'bevy_reflect']
+default = ['bevy_asset']
+#default = ['editor_bevy', 'bevy_reflect']
 serialize = ['dep:serde', 'bevy_math/serialize']
 ron = ['serialize', 'dep:ron', 'dep:thiserror']
 bevy_reflect = [
@@ -37,13 +38,16 @@ inspector-egui = [
 ]
 
 [dependencies]
-bevy_math = { version = "0.16", default-features = false, features = ["curve"] }
-bevy_reflect = { version = "0.16", default-features = false, optional = true }
-bevy_app = { version = "0.16", default-features = false, optional = true }
-bevy_ecs = { version = "0.16", default-features = false, optional = true }
-bevy_asset = { version = "0.16", optional = true }
-bevy_log = { version = "0.16", default-features = false, optional = true }
-bevy_winit = { version = "0.16", default-features = false, optional = true }
+bevy_math = { version = "0.17.0-rc.1", default-features = false, features = [
+    "std",
+    "curve",
+] }
+bevy_reflect = { version = "0.17.0-rc.1", default-features = false, optional = true }
+bevy_app = { version = "0.17.0-rc.1", default-features = false, optional = true }
+bevy_ecs = { version = "0.17.0-rc.1", default-features = false, optional = true }
+bevy_asset = { version = "0.17.0-rc.1", optional = true }
+bevy_log = { version = "0.17.0-rc.1", default-features = false, optional = true }
+bevy_winit = { version = "0.17.0-rc.1", default-features = false, optional = true }
 
 thiserror = { version = "2", optional = true }
 serde = { version = "1", optional = true }
@@ -60,7 +64,7 @@ bevy-inspector-egui = { version = "0.31", optional = true, default-features = fa
 egui_plot = { version = "0.32", optional = true }
 
 [dev-dependencies]
-bevy = "0.16"
+bevy = "0.17.0-rc.1"
 bevy-inspector-egui = { version = "0.31" }
 criterion = "0.5.1"
 rand = "0.8"
