@@ -37,37 +37,37 @@ inspector-egui = [
 ]
 
 [dependencies]
-bevy_math = { version = "0.17.0-rc.1", default-features = false, features = [
+bevy_math = { version = "0.17", default-features = false, features = [
     "std",
     "curve",
 ] }
-bevy_reflect = { version = "0.17.0-rc.1", default-features = false, optional = true }
-bevy_app = { version = "0.17.0-rc.1", default-features = false, optional = true }
-bevy_ecs = { version = "0.17.0-rc.1", default-features = false, optional = true }
-bevy_asset = { version = "0.17.0-rc.1", optional = true }
-bevy_log = { version = "0.17.0-rc.1", default-features = false, optional = true }
-bevy_winit = { version = "0.17.0-rc.1", default-features = false, optional = true }
+bevy_reflect = { version = "0.17", default-features = false, optional = true }
+bevy_app = { version = "0.17", default-features = false, optional = true }
+bevy_ecs = { version = "0.17", default-features = false, optional = true }
+bevy_asset = { version = "0.17", optional = true }
+bevy_log = { version = "0.17", default-features = false, optional = true }
+bevy_winit = { version = "0.17", default-features = false, optional = true }
 
 thiserror = { version = "2", optional = true }
 serde = { version = "1", optional = true }
 ron = { version = "0.10", optional = true }
 
-egui = { version = "0.32", optional = true, git = "https://github.com/pindash-io/egui.git", branch = "accesskit" }
+egui = { version = "0.32", optional = true }
 bevy_egui = { version = "0.37", default-features = false, features = [
     "render",
-], optional = true, git = "https://github.com/villor/bevy_egui.git", branch = "bevy-0.17" }
+], optional = true }
 
 bevy-inspector-egui = { version = "0.34", optional = true, default-features = false, features = [
     "bevy_render",
-], git = "https://github.com/villor/bevy-inspector-egui.git", branch = "bevy-0.17" }
-egui_plot = { version = "0.33", optional = true, git = "https://github.com/villor/egui_plot.git", branch = "accesskit" }
+] }
+egui_plot = { version = "0.33", optional = true }
 
 [dev-dependencies]
-bevy = "0.17.0-rc.1"
-bevy-inspector-egui = { version = "0.34", git = "https://github.com/villor/bevy-inspector-egui.git", branch = "bevy-0.17" }
+bevy = "0.17"
+bevy-inspector-egui = { version = "0.34" }
 criterion = "0.5.1"
 rand = "0.9"
-eframe = { version = "0.32", git = "https://github.com/pindash-io/egui.git", branch = "accesskit" }
+eframe = { version = "0.32" }
 
 [[example]]
 name = "dev"
