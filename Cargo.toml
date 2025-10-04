@@ -64,10 +64,10 @@ egui_plot = { version = "0.33", optional = true }
 
 [dev-dependencies]
 bevy = "0.17"
-bevy-inspector-egui = { version = "0.34" }
+bevy-inspector-egui = "0.34"
 criterion = "0.5.1"
 rand = "0.9"
-eframe = { version = "0.32" }
+eframe = "0.32"
 
 [[example]]
 name = "dev"
