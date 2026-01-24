@@ -1,6 +1,7 @@
 //! Contains the asset loader plugin for `LookupCurve` assets.
 use bevy_app::{App, Plugin};
 use bevy_asset::{AssetApp, AssetLoader, LoadContext, io::Reader};
+use bevy_reflect::TypePath;
 
 use crate::{LookupCurve, LookupCurveLoadError};
 
@@ -13,7 +14,7 @@ impl Plugin for AssetPlugin {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, TypePath)]
 pub struct LookupCurveAssetLoader;
 
 impl AssetLoader for LookupCurveAssetLoader {
