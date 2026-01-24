@@ -145,8 +145,10 @@ impl LookupCurveEguiEditor {
         });
 
         #[cfg(feature = "ron")]
-        if self.ron_path.is_some() && ui.button("Save").clicked() {
-            if let Err(e) = curve.save_to_file(self.ron_path.as_ref().unwrap().as_str()) {
+        if let Some(ron_path) = self.ron_path.as_ref()
+            && ui.button("Save").clicked()
+        {
+            if let Err(e) = curve.save_to_file(ron_path.as_str()) {
                 #[cfg(feature = "bevy_app")]
                 bevy_log::error!("Failed to save curve {}", e);
                 #[cfg(not(feature = "bevy_app"))]
