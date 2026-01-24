@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.11.0] - 24-Jan-2026
+
+- Update to Bevy 0.18 🥳
+- Fixed an editor bug resulting in panics when moving tangents too close to their knot on the X-axis.
+- Removed custom `CubicSegment`-implementation in favor of the `bevy_math`-provided one (with one exception for the newton-rhapson algorithm).
+
+### Updated
+- bevy to `0.18`
+- bevy_egui to `0.39`
+- egui to `0.33`
+- bevy_inspector_egui to `0.36`
+- egui_plot to `0.33`
+
 ## [0.10.0] - 04-Oct-2025
 
 - Update to Bevy 0.17 🥳
