@@ -438,6 +438,12 @@ impl LookupCurveEguiEditor {
                                 .transform_pos(interact_response.interact_pointer_pos().unwrap()),
                         );
 
+                        // Clamp tangent to its side on the x-axis
+                        c = match side {
+                            TangentSide::Left => c.with_x(c.x.min(knot.position.x - f32::EPSILON)),
+                            TangentSide::Right => c.with_x(c.x.max(knot.position.x + f32::EPSILON)),
+                        };
+
                         if tangent.weight.is_none() {
                             // Unweighted x is always 1/3 of dx
                             let x = (bezier[3].x - bezier[0].x) * dir / 3.;
