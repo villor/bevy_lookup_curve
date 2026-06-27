@@ -116,12 +116,12 @@ fn lookup_curve_handle_ui(
     };
 
     let handle = handle.downcast_ref::<Handle<LookupCurve>>().unwrap();
-    let Some(curve) = curves.get_mut(handle) else {
+    let Some(mut curve) = curves.get_mut(handle) else {
         ui.label("dead asset handle");
         return false;
     };
 
-    lookup_curve_miniature_with_edit(curve, id, ui)
+    lookup_curve_miniature_with_edit(&mut curve, id, ui)
 }
 
 fn lookup_curve_handle_ui_readonly(

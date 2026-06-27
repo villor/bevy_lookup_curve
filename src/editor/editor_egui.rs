@@ -185,7 +185,12 @@ impl LookupCurveEguiEditor {
 
                 // Zooming
                 ui.input(|input| {
-                    let scroll_delta = input.raw_scroll_delta.y;
+                    // HACK: https://github.com/emilk/egui/issues/8051
+                    let scroll_delta = input.raw.events.iter().fold(0.0, |s, event| match event {
+                        egui::Event::MouseWheel { delta, .. } => s + delta.y,
+                        _ => s,
+                    });
+
                     if scroll_delta != 0.0 {
                         self.scale *= 1.0 + -scroll_delta * 0.001;
                         // TODO: adjust offset accordingly
