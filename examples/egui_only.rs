@@ -34,6 +34,6 @@ struct MyApp {
 impl eframe::App for MyApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default()
-            .show_inside(ui, |ui| self.editor.ui(ui, &mut self.lookup_curve, None));
+            .show(ui, |ui| self.editor.ui(ui, &mut self.lookup_curve, None));
     }
 }

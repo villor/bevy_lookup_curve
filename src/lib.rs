@@ -1,5 +1,6 @@
 #![doc = include_str!("../README.md")]
-use bevy_math::{Curve, Vec2, cubic_splines::CubicSegment, curve::Interval, ops};
+use bevy_curve::{Curve, Interval, cubic_splines::CubicSegment};
+use bevy_math::{Vec2, ops};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[doc(hidden)]
@@ -174,7 +175,7 @@ fn unique_knot_id() -> usize {
 }
 
 /// Specifies which tangent of a [Knot] to target for some operations.
-#[derive(Copy, Clone, Hash)]
+#[derive(Copy, Clone, Hash, std::fmt::Debug)]
 pub enum TangentSide {
     Left,
     Right,

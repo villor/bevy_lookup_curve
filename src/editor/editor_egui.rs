@@ -113,7 +113,7 @@ impl LookupCurveEguiEditor {
     pub fn ui_window(
         &mut self,
         ctx: &mut egui::Context,
-        id: impl std::hash::Hash,
+        id: impl std::hash::Hash + std::fmt::Debug,
         title: impl Into<WidgetText>,
         curve: &mut LookupCurve,
         sample: Option<f32>,
