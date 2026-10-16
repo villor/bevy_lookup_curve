@@ -1,8 +1,10 @@
+use std::hint::black_box;
+
 use bevy_lookup_curve::Knot;
 use bevy_lookup_curve::knot_search::KnotSearch;
 use bevy_math::Vec2;
 use criterion::BenchmarkId;
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use criterion::{Criterion, criterion_group, criterion_main};
 
 fn generate_knots(n: usize) -> Vec<Knot> {
     let step = 1. / (n - 1) as f32;

@@ -63,7 +63,7 @@ egui_plot = { version = "0.37", optional = true }
 [dev-dependencies]
 bevy = "0.20"
 bevy-inspector-egui = { git = "https://github.com/taboky-dev/bevy-inspector-egui.git", rev = "9a5b0866ec764ab9baec0f1361f4edac2ea0e764" }
-criterion = "0.5.1"
+criterion = "0.8.2"
 rand = "0.10"
 eframe = "0.36"
 
