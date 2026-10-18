@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.13.0] - 18-Oct-2026
+- Update to Bevy 0.20
+
+### Updated
+- bevy to `0.20`
+- egui to `0.36`
+- bevy_egui to `0.43`
+- bevy-inspector-egui to `0.38`
+- egui_plot to `0.37`
+- eframe to `0.36`
+- criterion to `0.8.2`
+
 ## [0.12.0] - 27-Jun-2026
 - Update to Bevy 0.19
 
