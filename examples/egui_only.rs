@@ -1,6 +1,6 @@
 //! Demonstrates using bevy_lookup_curve with just egui, no bevy app.
 //!
-//! This example has no dependencies on bevy except `bevy_math`.
+//! This example has no dependencies on bevy except `bevy_math` / `bevy_curve`.
 use eframe::egui;
 
 use bevy_lookup_curve::prelude::*;

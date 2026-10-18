@@ -54,7 +54,7 @@ The [`animation`](https://github.com/villor/bevy_lookup_curve/tree/main/examples
 |0.13|0.1-0.2|
 
 ## Using without Bevy
-This crate can be used without Bevy as well (except for `bevy_math` which is a core dependency).
+This crate can be used without Bevy as well (except for `bevy_math` and `bevy_curve` which are core dependencies).
 
 Just set `default-features = false`. And enable `serialize`, `ron`, and/or `editor_egui` if needed.
 
