@@ -1,6 +1,6 @@
 //! Demonstrates using bevy_lookup_curve with just egui, no bevy app.
 //!
-//! This example has no dependencies on bevy except `bevy_math`.
+//! This example has no dependencies on bevy except `bevy_math` / `bevy_curve`.
 use eframe::egui;
 
 use bevy_lookup_curve::prelude::*;
@@ -34,6 +34,6 @@ struct MyApp {
 impl eframe::App for MyApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default()
-            .show_inside(ui, |ui| self.editor.ui(ui, &mut self.lookup_curve, None));
+            .show(ui, |ui| self.editor.ui(ui, &mut self.lookup_curve, None));
     }
 }
